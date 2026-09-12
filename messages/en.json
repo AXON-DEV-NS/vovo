@@ -1,0 +1,766 @@
+{
+  "common": {
+    "appName": "VOVO Agent AI",
+    "getStarted": "Get Started",
+    "learnMore": "Learn More",
+    "signUp": "Sign Up",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "home": "Home",
+    "pricing": "Pricing",
+    "contact": "Contact",
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "support": "Support",
+    "login": "Log In",
+    "logout": "Log Out",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "close": "Close",
+    "search": "Search",
+    "noResults": "No results found",
+    "required": "Required",
+    "optional": "Optional"
+  },
+  "nav": {
+    "features": "Features",
+    "howItWorks": "How It Works",
+    "testimonials": "Testimonials",
+    "contactUs": "Contact Us",
+    "viewPricing": "View Pricing",
+    "language": "Language"
+  },
+  "hero": {
+    "headline": "Let AI Run Your YouTube Channel",
+    "subheadline": "Connect your channel once. Our autonomous AI agent handles research, scripting, production, publishing, and optimization — 24/7. You just approve.",
+    "cta": "Start Growing Free",
+    "ctaSecondary": "See How It Works"
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "subtitle": "From zero to a growing channel in four simple steps",
+    "step1Title": "Connect Your Channel",
+    "step1Desc": "Securely link your YouTube channel in under 60 seconds. We only request the permissions we need.",
+    "step2Title": "AI Analyzes Your Niche",
+    "step2Desc": "Our AI studies your audience, competitors, and trending topics to build a data-driven strategy.",
+    "step3Title": "AI Produces Content",
+    "step3Desc": "Scripts, thumbnails, videos — created automatically. You review and approve with one click.",
+    "step4Title": "Watch Your Channel Grow",
+    "step4Desc": "The AI continuously optimizes based on performance data, learning what works for your audience."
+  },
+  "features": {
+    "title": "Everything You Need to Dominate YouTube",
+    "subtitle": "Powerful AI capabilities designed to turn your channel into a growth machine",
+    "competitorAnalysis": {
+      "title": "Competitor Analysis",
+      "desc": "AI monitors your competitors 24/7, identifying their top-performing content, upload patterns, and audience gaps you can exploit."
+    },
+    "contentProduction": {
+      "title": "Automatic Content Production",
+      "desc": "From script to thumbnail to final video — the AI handles the entire production pipeline with professional quality."
+    },
+    "optimization": {
+      "title": "Continuous Optimization",
+      "desc": "Titles, tags, descriptions, and posting schedules are A/B tested and optimized automatically based on real performance data."
+    },
+    "security": {
+      "title": "Enterprise-Grade Security",
+      "desc": "Your credentials are encrypted at rest, your data never leaves our secure infrastructure, and you maintain full control."
+    }
+  },
+  "socialProof": {
+    "title": "Trusted by Growing Creators",
+    "subtitle": "Join thousands of creators who let AI handle the heavy lifting",
+    "stat1Value": "2.4M+",
+    "stat1Label": "Videos Published",
+    "stat2Value": "340%",
+    "stat2Label": "Average Growth",
+    "stat3Value": "12,000+",
+    "stat3Label": "Active Channels",
+    "stat4Value": "99.9%",
+    "stat4Label": "Uptime",
+    "testimonial1": "VOVO Agent AI completely transformed how I run my channel. I used to spend 20+ hours a week on content — now I spend 2 hours reviewing AI drafts.",
+    "testimonial1Author": "Sarah Chen",
+    "testimonial1Role": "Tech Creator, 850K subscribers",
+    "testimonial2": "The competitor analysis alone is worth the subscription. The AI found a content gap I never would have discovered on my own.",
+    "testimonial2Author": "Ahmed Al-Rashid",
+    "testimonial2Role": "Business Channel, 320K subscribers",
+    "testimonial3": "I was skeptical about AI content, but VOVO's output quality rivals what my human team was producing — at a fraction of the cost.",
+    "testimonial3Author": "Maria Rodriguez",
+    "testimonial3Role": "Lifestyle Creator, 1.2M subscribers"
+  },
+  "pricingTeaser": {
+    "title": "Simple, Transparent Pricing",
+    "subtitle": "Start free. Scale as you grow.",
+    "viewAllPlans": "View All Plans"
+  },
+  "pricing": {
+    "title": "Choose Your Plan",
+    "subtitle": "All plans include a 14-day free trial. Cancel anytime.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "yearlyDiscount": "Save 20%",
+    "perMonth": "/month",
+    "startTrial": "Start Free Trial",
+    "currentPlan": "Current Plan",
+    "mostPopular": "Most Popular",
+    "starter": {
+      "name": "Starter",
+      "desc": "Perfect for individual creators getting started with AI-powered growth.",
+      "price": "29",
+      "priceYearly": "23",
+      "channels": "1 channel",
+      "videos": "10 AI videos/month",
+      "analytics": "Basic analytics",
+      "features": [
+        "AI script writing",
+        "Auto thumbnail generation",
+        "Publishing scheduler",
+        "Email support"
+      ]
+    },
+    "growth": {
+      "name": "Growth",
+      "desc": "For serious creators ready to scale their content operation.",
+      "price": "79",
+      "priceYearly": "63",
+      "channels": "3 channels",
+      "videos": "40 AI videos/month",
+      "analytics": "Advanced analytics",
+      "features": [
+        "Everything in Starter",
+        "Competitor analysis",
+        "A/B testing",
+        "Priority support",
+        "Custom brand voice"
+      ]
+    },
+    "agency": {
+      "name": "Agency",
+      "desc": "For teams and agencies managing multiple client channels.",
+      "price": "199",
+      "priceYearly": "159",
+      "channels": "10 channels",
+      "videos": "Unlimited AI videos",
+      "analytics": "Full analytics suite",
+      "features": [
+        "Everything in Growth",
+        "Team collaboration",
+        "White-label reports",
+        "Dedicated account manager",
+        "API access",
+        "Custom integrations"
+      ]
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "questions": [
+        {
+          "question": "Can I cancel anytime?",
+          "answer": "Yes. You can cancel your subscription at any time from your settings page. Your access continues until the end of your current billing period."
+        },
+        {
+          "question": "What happens to my channel data if I cancel?",
+          "answer": "Your data remains accessible for 30 days after cancellation. You can export everything during that period. After 30 days, all data is permanently deleted per our data retention policy."
+        },
+        {
+          "question": "Do you own my content?",
+          "answer": "Absolutely not. You retain 100% ownership of all content — scripts, thumbnails, videos, and any other creative assets produced through VOVO Agent AI."
+        },
+        {
+          "question": "How does the AI produce videos?",
+          "answer": "Our AI generates scripts, voiceovers, visual elements, and edits them together using professional editing algorithms. Every video goes through your approval before publishing."
+        },
+        {
+          "question": "Can I edit the AI's output before approval?",
+          "answer": "Yes. Every script, thumbnail, and video draft is fully editable. The AI creates the first version, and you have complete control to modify anything before approving."
+        }
+      ]
+    }
+  },
+  "contact": {
+    "title": "Get in Touch",
+    "subtitle": "Have a question or want to partner? We'd love to hear from you.",
+    "form": {
+      "name": "Your Name",
+      "namePlaceholder": "John Doe",
+      "email": "Email Address",
+      "emailPlaceholder": "john@example.com",
+      "subject": "Subject",
+      "subjectPlaceholder": "How can we help?",
+      "message": "Message",
+      "messagePlaceholder": "Tell us about your inquiry...",
+      "submit": "Send Message",
+      "sending": "Sending...",
+      "success": "Message sent successfully! We'll get back to you within 24 hours.",
+      "error": "Failed to send message. Please try again or email us directly."
+    },
+    "info": {
+      "title": "Contact Information",
+      "email": "oren.on.oren.25@gmail.com",
+      "responseTime": "Response within 24 hours",
+      "existingUsers": "Already a user? Visit our",
+      "supportCenter": "Support Center"
+    }
+  },
+  "legal": {
+    "privacy": {
+      "title": "Privacy Policy",
+      "lastUpdated": "Last updated: September 2025",
+      "intro": "VOVO Agent AI (\"we\", \"our\", or \"us\") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.",
+      "sections": [
+        {
+          "heading": "Information We Collect",
+          "content": "We collect information you provide directly: account information (email, name, profile picture via Google OAuth), YouTube channel data (channel ID, title, subscriber count, video metadata), and niche preferences. We automatically collect usage analytics (pages visited, features used, session duration) and device information (browser type, operating system, IP address) for security and service improvement."
+        },
+        {
+          "heading": "How We Use Your Information",
+          "content": "Your data is used to: provide and maintain the VOVO Agent AI service, personalize AI-generated content strategies, analyze platform usage to improve features, communicate service updates and support responses, and ensure platform security and prevent abuse. We do not sell your personal data to third parties."
+        },
+        {
+          "heading": "YouTube Data & API Services",
+          "content": "When you connect your YouTube channel, we access your data through the YouTube Data API in compliance with Google's API Services Terms of Service. We only access the minimum data necessary: channel information, video metadata, and analytics. We use this data solely to provide our content management services. You can revoke API access at any time from your dashboard settings."
+        },
+        {
+          "heading": "Data Protection",
+          "content": "All data is encrypted in transit (TLS 1.3) and at rest (AES-256). We maintain SOC 2 compliant infrastructure, implement strict access controls, and conduct regular security audits. OAuth tokens are stored encrypted and never exposed to client-side code."
+        },
+        {
+          "heading": "Data Retention & Deletion",
+          "content": "Active account data is retained while your account is active. Upon account closure, all personal data is permanently deleted within 30 days. Channel analytics data may be retained in anonymized form for aggregate service improvement. You can request immediate full data deletion at any time by contacting oren.on.oren.25@gmail.com."
+        },
+        {
+          "heading": "Your Rights",
+          "content": "You have the right to: access all personal data we hold about you, correct any inaccurate data, request complete deletion of your data, export your data in a portable format, and opt out of non-essential data collection. Exercise these rights by contacting our privacy team."
+        },
+        {
+          "heading": "Changes to This Policy",
+          "content": "We may update this policy periodically. Material changes will be communicated via email and in-app notification at least 30 days before taking effect. Continued use after changes take effect constitutes acceptance of the updated policy."
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "lastUpdated": "Last updated: September 2025",
+      "intro": "Welcome to VOVO Agent AI. By accessing or using our platform, you agree to be bound by these Terms of Service. Please read them carefully.",
+      "sections": [
+        {
+          "heading": "Service Description",
+          "content": "VOVO Agent AI provides an AI-powered platform for YouTube channel management. Our service includes automated content research, script writing, thumbnail generation, video production assistance, publishing, and performance optimization. The AI operates autonomously based on your configured preferences; you retain approval authority over all published content."
+        },
+        {
+          "heading": "Account & Eligibility",
+          "content": "You must be at least 18 years old to use VOVO Agent AI. You are responsible for maintaining the security of your account and for all activities that occur under your account. You must provide accurate and complete information during registration and keep your account information updated."
+        },
+        {
+          "heading": "Subscription & Payment",
+          "content": "Paid plans are billed in advance on a monthly or annual basis. All prices are in USD. Subscriptions automatically renew unless cancelled at least 24 hours before the renewal date. A 14-day free trial is available for new users; no charge is made until the trial expires and you choose to subscribe. Refunds are available within 7 days of any charge."
+        },
+        {
+          "heading": "Content Ownership",
+          "content": "You retain full ownership of all content created through VOVO Agent AI, including scripts, thumbnails, videos, and metadata. We claim no intellectual property rights over your content. By using the service, you grant us a limited license to process your content solely for the purpose of providing the service."
+        },
+        {
+          "heading": "Acceptable Use",
+          "content": "You agree not to: use the platform for any unlawful purpose, generate content that violates YouTube's Community Guidelines, attempt to reverse-engineer or exploit the AI systems, share account credentials with unauthorized parties, or use automated means to access the platform outside provided APIs. Violation may result in immediate account suspension."
+        },
+        {
+          "heading": "Limitation of Liability",
+          "content": "VOVO Agent AI is provided \"as is\" without warranties of any kind. We are not liable for any indirect, incidental, or consequential damages arising from use of the platform. Our total liability shall not exceed the amount paid by you in the 12 months preceding the claim. We do not guarantee specific growth results or channel performance."
+        },
+        {
+          "heading": "Termination",
+          "content": "Either party may terminate this agreement at any time. Upon termination, your access to the platform ceases immediately. We will provide a 30-day window for data export following termination. Sections regarding content ownership, limitation of liability, and dispute resolution survive termination."
+        }
+      ]
+    },
+    "refund": {
+      "title": "Refund Policy",
+      "lastUpdated": "Last updated: September 2026",
+      "intro": "At VOVO Agent AI, customer satisfaction and trust are our top priorities. We believe in the quality of our autonomous AI platform and provide an unconditional 14-day money-back guarantee on all subscriptions.",
+      "sections": [
+        {
+          "heading": "14-Day Unconditional Money-Back Guarantee",
+          "content": "If you are not completely satisfied with VOVO Agent AI for any reason within the first 14 days of starting your subscription, you are entitled to a full 100% refund. No questions asked."
+        },
+        {
+          "heading": "Annual Subscription Renewal Refunds",
+          "content": "For annual plan renewals, you may request a full refund within 7 business days following the renewal charge date if you did not intend to renew."
+        },
+        {
+          "heading": "Refund Processing & Timeline",
+          "content": "Refund requests are processed within 24 to 48 hours. Depending on your bank or credit card issuer, the refunded funds will appear on your statement within 3 to 7 business days. Refunds are issued directly back to the original payment method (Visa, Mastercard, Apple Pay, PayPal)."
+        },
+        {
+          "heading": "Fair Use & Anti-Abuse Protection",
+          "content": "To prevent fraud and preserve the platform for legitimate creators, users who engage in automated mass content extraction or repeated refund cycles across multiple accounts may be ineligible for subsequent refunds."
+        },
+        {
+          "heading": "How to Request a Refund",
+          "content": "To initiate a refund, simply send an email with your account email address to oren.on.oren.25@gmail.com or submit a request through the Help & Billing section inside your dashboard."
+        }
+      ]
+    },
+    "cancellation": {
+      "title": "Cancellation & Subscription Policy",
+      "lastUpdated": "Last updated: September 2026",
+      "intro": "You retain full, unrestricted control over your subscription at all times. You can cancel your subscription whenever you wish without phone calls, hurdles, or hidden cancellation fees.",
+      "sections": [
+        {
+          "heading": "Cancel Anytime with One Click",
+          "content": "You can cancel your subscription at any moment directly from your account dashboard under Settings > Billing > Manage Subscription. Cancellation takes effect immediately with no retention obstacles."
+        },
+        {
+          "heading": "Continued Access Until Billing Cycle Ends",
+          "content": "When you cancel, your account remains fully active with complete access to all features, AI generation quotas, and channel automation tools until the conclusion of your current paid billing period."
+        },
+        {
+          "heading": "Zero Cancellation Fees",
+          "content": "We never charge cancellation fees, penalties, or early termination costs. You only pay for the billing cycles you have authorized."
+        },
+        {
+          "heading": "Data & Content Retention After Cancellation",
+          "content": "All scripts, video assets, analytics history, and thumbnails created during your active subscription remain yours forever. Your project files are safely archived for 90 days after subscription expiration, allowing you to reactivate seamlessly at any time without losing your setup."
+        },
+        {
+          "heading": "Easy Plan Reactivation",
+          "content": "If you ever decide to return to VOVO Agent AI, your account preferences, connected YouTube channels, and historical performance models will be ready for instant reactivation."
+        }
+      ]
+    }
+  },
+  "login": {
+    "title": "Welcome Back",
+    "subtitle": "Sign in to your VOVO Agent AI account",
+    "google": "Continue with Google",
+    "or": "or",
+    "magicLink": {
+      "title": "Sign in with Email",
+      "description": "Enter your email and we'll send you a secure sign-in link.",
+      "emailPlaceholder": "you@example.com",
+      "sendLink": "Send Magic Link",
+      "sending": "Sending...",
+      "checkEmail": "Check your inbox",
+      "checkEmailDesc": "We sent a sign-in link to {email}. Click the link to access your account.",
+      "didntReceive": "Didn't receive the email?",
+      "resend": "Resend",
+      "resendIn": "Resend in {seconds}s",
+      "backToLogin": "Back to login",
+      "linkExpired": "This link has expired. Please request a new one.",
+      "invalidLink": "This link is invalid or has already been used."
+    },
+    "error": {
+      "generic": "Sign-in failed. Please try again.",
+      "emailRequired": "Please enter a valid email address.",
+      "rateLimited": "Too many attempts. Please wait a few minutes before trying again."
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome back, {name}",
+    "overview": "Channel Overview",
+    "stats": {
+      "subscribers": "Subscribers",
+      "views30d": "Views (30 days)",
+      "revenue": "Est. Revenue",
+      "latestVideo": "Latest Video"
+    },
+    "channels": {
+      "title": "Your Channels",
+      "connectNew": "Connect New Channel",
+      "noChannels": "No channels connected yet",
+      "noChannelsDesc": "Connect your YouTube channel to let the AI start working for you."
+    },
+    "alerts": {
+      "title": "Smart Alerts",
+      "trendingOpportunity": "New trending opportunity detected in your niche",
+      "videoAwaitingApproval": "Video draft ready for your review",
+      "performanceWarning": "Views dropped 15% vs last week — AI is investigating",
+      "newIdea": "AI generated 3 new content ideas based on recent trends",
+      "competitorAlert": "Competitor published a viral video — analysis ready"
+    },
+    "quickActions": "Quick Actions",
+    "viewAnalytics": "View Analytics",
+    "addChannel": "Add Channel"
+  },
+  "channels": {
+    "connect": {
+      "title": "Connect Your YouTube Channel",
+      "step1": {
+        "title": "Choose a Channel",
+        "desc": "Select the YouTube channel you want to connect to VOVO Agent AI."
+      },
+      "step2": {
+        "title": "Review Permissions",
+        "desc": "We request only the minimum permissions needed. You can revoke access anytime.",
+        "scopes": [
+          "View your YouTube account and channel data",
+          "View your YouTube videos and metadata",
+          "Manage your YouTube videos (publish on your behalf)"
+        ],
+        "note": "We will never delete, modify, or upload content without your explicit approval."
+      },
+      "step3": {
+        "title": "Initial Scan",
+        "desc": "Analyzing your channel to build a tailored strategy...",
+        "scanning": "Scanning videos and audience data",
+        "analyzing": "Analyzing content performance",
+        "optimizing": "Building your optimization profile"
+      },
+      "connectButton": "Connect with Google",
+      "continue": "Continue",
+      "back": "Back",
+      "success": "Channel connected successfully!",
+      "error": "Failed to connect channel. Please try again."
+    }
+  },
+  "niche": {
+    "title": "Define Your Content Strategy",
+    "subtitle": "Help the AI understand your vision. You can always change these later.",
+    "selectNiche": "Select Your Niche",
+    "describeIdea": "Describe Your Content Idea",
+    "describePlaceholder": "I want to create videos about...",
+    "targetMarket": "Target Market",
+    "marketOptions": {
+      "us": "English-speaking (US, UK, CA, AU)",
+      "arabic": "Arabic-speaking markets",
+      "both": "Both markets (separate schedules)"
+    },
+    "toneAndVoice": "Content Tone & Voice",
+    "tones": {
+      "formal": { "name": "Formal", "desc": "Professional, authoritative, well-structured" },
+      "energetic": { "name": "Energetic", "desc": "Dynamic, exciting, high-energy delivery" },
+      "calm": { "name": "Calm", "desc": "Relaxed, thoughtful, easy-going pace" },
+      "humorous": { "name": "Humorous", "desc": "Witty, entertaining, light-hearted" }
+    },
+    "save": "Save Strategy",
+    "saving": "Saving...",
+    "success": "Strategy saved! The AI is now tailoring its approach.",
+    "aiSuggestion": "AI Suggestion",
+    "placeholder": "Coming soon — the AI will suggest ideas as you type",
+    "referencesTitle": "AI Inspiration & Benchmarking (Optional)",
+    "referencesSubtitle": "Provide reference links so the AI can analyze storytelling structure, pacing, and competitor strategies.",
+    "referenceVideoLabel": "Reference Video Link",
+    "referenceVideoPlaceholder": "https://www.youtube.com/watch?v=... (Video style you want the AI to emulate)",
+    "referenceChannelLabel": "Competitor / Model Channel Link",
+    "referenceChannelPlaceholder": "https://www.youtube.com/@ChannelName (Channel in your target niche to analyze)"
+  },
+  "footer": {
+    "product": "Product",
+    "company": "Company",
+    "legal": "Legal",
+    "support": "Support",
+    "allRightsReserved": "All rights reserved.",
+    "builtWith": "Built with AI intelligence",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "contactUs": "Contact Us",
+    "helpCenter": "Help Center",
+    "documentation": "Documentation",
+    "status": "System Status",
+    "about": "About Us",
+    "careers": "Careers",
+    "blog": "Blog"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "message": "The page you're looking for doesn't exist or has been moved.",
+    "backHome": "Back to Home"
+  },
+  "contentCalendar": {
+    "title": "Content Calendar",
+    "subtitle": "Your AI-managed content pipeline at a glance.",
+    "weekView": "Week",
+    "monthView": "Month",
+    "allChannels": "All Channels",
+    "allStatuses": "All Statuses",
+    "noItems": "No content items this period.",
+    "noItemsDesc": "The AI will start generating content ideas once your channel is connected and niche is configured.",
+    "statuses": {
+      "IDEA": "Idea",
+      "SCRIPT": "Script",
+      "GENERATING": "Generating",
+      "READY_FOR_REVIEW": "Ready for Review",
+      "SCHEDULED": "Scheduled",
+      "PUBLISHED": "Published",
+      "REJECTED": "Rejected"
+    },
+    "modal": {
+      "scheduledFor": "Scheduled for",
+      "channel": "Channel",
+      "script": "Script",
+      "noScript": "No script generated yet.",
+      "statusHistory": "Status History",
+      "approve": "Approve",
+      "requestChanges": "Request Changes",
+      "reject": "Reject",
+      "commentPlaceholder": "Describe what needs to be changed...",
+      "commentRequired": "Please provide a comment explaining what needs to change.",
+      "approveSuccess": "Content approved and scheduled.",
+      "rejectSuccess": "Content rejected.",
+      "changesSuccess": "Changes requested. The AI will revise the content.",
+      "actionError": "Action failed. Please try again.",
+      "confirmReject": "Are you sure you want to reject this content item?",
+      "actor": {
+        "system": "AI Agent",
+        "client": "You"
+      }
+    },
+    "filter": {
+      "channel": "Channel",
+      "status": "Status",
+      "period": "Period"
+    }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Track your channel performance and growth trends.",
+    "description": "Track your channel performance and growth trends.",
+    "range7d": "7 days",
+    "range30d": "30 days",
+    "range90d": "90 days",
+    "allChannels": "All Channels",
+    "totalViews": "Total Views",
+    "subscriberGrowth": "Subscriber Growth",
+    "watchTime": "Watch Time",
+    "estRevenue": "Est. Revenue",
+    "hours": "hrs",
+    "viewsChart": "Views Over Time",
+    "subscriberChart": "Subscriber Growth",
+    "watchTimeChart": "Watch Time (hrs)",
+    "revenueChart": "Estimated Revenue ($)",
+    "topVideos": "Top Performing Videos",
+    "videoTitle": "Video",
+    "videoViews": "Views",
+    "videoWatchTime": "Watch Time",
+    "videoPublished": "Published",
+    "loading": "Loading analytics...",
+    "empty": "No analytics data yet.",
+    "emptyDesc": "Connect a channel and let the AI publish your first videos to see performance data here.",
+    "error": "Failed to load analytics. Please refresh.",
+    "channels": {
+      "techInsights": "Tech Insights",
+      "aiDaily": "AI Daily"
+    },
+    "filters": {
+      "7d": "7d",
+      "30d": "30d",
+      "90d": "90d"
+    },
+    "stats": {
+      "totalViews": "Total Views",
+      "subscriberGrowth": "Subscriber Growth",
+      "watchTime": "Watch Time",
+      "estRevenue": "Est. Revenue"
+    },
+    "charts": {
+      "viewsOverTime": "Views Over Time",
+      "subscriberGrowth": "Subscriber Growth",
+      "watchTime": "Watch Time (hrs)",
+      "estRevenue": "Est. Revenue ($)"
+    },
+    "table": {
+      "topVideos": "Top Performing Videos",
+      "rank": "Rank",
+      "video": "Video",
+      "views": "Views",
+      "watchTime": "Watch Time"
+    },
+    "emptyState": {
+      "title": "No analytics data yet.",
+      "description": "Connect a channel and let the AI publish your first videos to see performance data here."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "account": "Account",
+      "channels": "Channels",
+      "notifications": "Notifications",
+      "billing": "Billing",
+      "security": "Security"
+    },
+    "account": {
+      "title": "Account Information",
+      "subtitle": "Manage your profile and connected login method.",
+      "name": "Full Name",
+      "namePlaceholder": "Your name",
+      "email": "Email Address",
+      "emailReadOnly": "Email cannot be changed — it is tied to your login method.",
+      "loginMethod": "Login Method",
+      "google": "Google OAuth",
+      "magicLink": "Magic Link",
+      "saveChanges": "Save Changes",
+      "saving": "Saving...",
+      "saveSuccess": "Profile updated successfully.",
+      "saveError": "Failed to save changes. Please try again."
+    },
+    "channels": {
+      "title": "Connected Channels",
+      "subtitle": "Manage the YouTube channels connected to your account.",
+      "connected": "Connected",
+      "subscribers": "subscribers",
+      "disconnect": "Disconnect",
+      "disconnectTitle": "Disconnect Channel",
+      "disconnectWarning": "Disconnecting this channel will stop all AI activity and permanently delete all associated content items and analytics. This cannot be undone.",
+      "disconnectConfirm": "Disconnect Channel",
+      "disconnectSuccess": "Channel disconnected.",
+      "addChannel": "Connect New Channel",
+      "noChannels": "No channels connected.",
+      "noChannelsDesc": "Connect your first YouTube channel to get started."
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "subtitle": "Choose how and when you want to be notified.",
+      "email": "Email Notifications",
+      "inApp": "In-App Notifications",
+      "contentReady": "Content ready for review",
+      "weeklyReport": "Weekly performance summary",
+      "securityAlerts": "Security alerts",
+      "aiActivity": "AI activity updates",
+      "billingUpdates": "Billing and plan updates",
+      "save": "Save Preferences",
+      "saveSuccess": "Notification preferences saved."
+    },
+    "billing": {
+      "title": "Billing & Subscription",
+      "subtitle": "Manage your plan, view invoices, and update payment details.",
+      "currentPlan": "Current Plan",
+      "status": "Status",
+      "renewsOn": "Renews on",
+      "canceledOn": "Cancels on",
+      "upgrade": "Upgrade Plan",
+      "downgrade": "Downgrade Plan",
+      "cancelSubscription": "Cancel Subscription",
+      "invoiceHistory": "Invoice History",
+      "invoiceDate": "Date",
+      "invoiceAmount": "Amount",
+      "invoiceStatus": "Status",
+      "invoiceDownload": "Download PDF",
+      "noSubscription": "No active subscription",
+      "noSubscriptionDesc": "Choose a plan to unlock AI-powered channel management.",
+      "choosePlan": "View Plans",
+      "noInvoices": "No invoices yet.",
+      "statuses": {
+        "TRIALING": "Trial",
+        "ACTIVE": "Active",
+        "PAST_DUE": "Past Due",
+        "CANCELED": "Canceled",
+        "PAUSED": "Paused"
+      },
+      "invoiceStatuses": {
+        "PENDING": "Pending",
+        "PAID": "Paid",
+        "FAILED": "Failed",
+        "REFUNDED": "Refunded"
+      },
+      "plans": {
+        "STARTER": "Starter",
+        "GROWTH": "Growth",
+        "AGENCY": "Agency"
+      }
+    },
+    "security": {
+      "title": "Security",
+      "subtitle": "Manage active sessions and account security.",
+      "sessions": "Active Sessions",
+      "sessionsDesc": "These are the devices currently signed in to your account.",
+      "device": "Device",
+      "ipAddress": "IP Address",
+      "lastActive": "Last Active",
+      "revoke": "Revoke",
+      "revokeSuccess": "Session revoked.",
+      "revokeError": "Failed to revoke session.",
+      "currentSession": "Current Session",
+      "unknownDevice": "Unknown Device",
+      "noSessions": "No active sessions found.",
+      "deleteAccount": "Delete Account",
+      "deleteAccountTitle": "Delete Your Account",
+      "deleteAccountWarning": "This will permanently delete your account, all connected channels, all content items, and all associated data. This action cannot be undone.",
+      "deleteAccountStep2": "To confirm, type DELETE in the field below:",
+      "deleteAccountInput": "Type DELETE to confirm",
+      "deleteAccountConfirm": "Permanently Delete Account",
+      "deleteAccountSuccess": "Account deleted.",
+      "deleteAccountError": "Failed to delete account. Please try again."
+    }
+  },
+  "support": {
+    "title": "Support Center",
+    "subtitle": "Find answers or reach out to our team.",
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "searchPlaceholder": "Search questions...",
+      "noResults": "No questions match your search.",
+      "categories": {
+        "Getting Started": "Getting Started",
+        "Content & AI": "Content & AI",
+        "Billing": "Billing",
+        "Account & Security": "Account & Security"
+      }
+    },
+    "tickets": {
+      "title": "Support Tickets",
+      "subtitle": "Can't find your answer? Open a ticket and we'll get back to you.",
+      "openNew": "Open New Ticket",
+      "subject": "Subject",
+      "subjectPlaceholder": "Brief description of your issue",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe your issue in detail...",
+      "priority": "Priority",
+      "priorities": {
+        "LOW": "Low",
+        "NORMAL": "Normal",
+        "HIGH": "High",
+        "URGENT": "Urgent"
+      },
+      "submit": "Submit Ticket",
+      "submitting": "Submitting...",
+      "submitSuccess": "Ticket submitted. We'll respond within 24 hours.",
+      "submitError": "Failed to submit ticket. Please try again.",
+      "empty": "No tickets yet.",
+      "emptyDesc": "Open a ticket if you need help with anything.",
+      "view": "View Ticket",
+      "messages": "messages",
+      "statuses": {
+        "OPEN": "Open",
+        "IN_PROGRESS": "In Progress",
+        "WAITING_ON_CLIENT": "Waiting on You",
+        "RESOLVED": "Resolved",
+        "CLOSED": "Closed"
+      }
+    },
+    "thread": {
+      "backToTickets": "Back to Support",
+      "replyPlaceholder": "Write your reply...",
+      "sendReply": "Send Reply",
+      "sending": "Sending...",
+      "replySuccess": "Reply sent.",
+      "replyError": "Failed to send reply.",
+      "you": "You",
+      "supportTeam": "Support Team"
+    }
+  },
+  "footer": {
+    "builtWith": "The autonomous AI platform designed to automate YouTube channel growth, production, and monetization.",
+    "product": "Product",
+    "company": "Company",
+    "legal": "Legal",
+    "contactUs": "Contact Us",
+    "helpCenter": "Help Center",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "refund": "Refund Policy",
+    "cancellation": "Cancellation Policy",
+    "blog": "Blog & Research",
+    "allRightsReserved": "All rights reserved.",
+    "securePayment": "Guaranteed Safe & Secure Checkout"
+  }
+}
