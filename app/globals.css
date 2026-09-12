@@ -1,0 +1,308 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --paper: #f5efe1;
+    --paper-high: #fbf7ed;
+    --ink: #1b1915;
+    --ink-soft: #3b372f;
+    --ink-mute: #6f6959;
+    --line: #e3dac5;
+    --green: #335433;
+    --gold: #c0851f;
+    --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    color: var(--ink);
+    background: var(--paper);
+    font-feature-settings: "ss01", "cv11", "liga";
+  }
+
+  ::selection {
+    background: #335433;
+    color: #f5efe1;
+  }
+
+  :focus-visible {
+    outline: 2px solid #335433;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-6 sm:px-8;
+  }
+
+  .container-wide {
+    @apply mx-auto w-full max-w-7xl px-6 sm:px-8;
+  }
+
+  .section-padding {
+    @apply py-20 sm:py-28;
+  }
+
+  .section-padding-tight {
+    @apply py-14 sm:py-20;
+  }
+
+  /* Eyebrow: a short rule + letter-spaced label — editorial, not a bare badge */
+  .eyebrow {
+    @apply inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-green-600;
+  }
+
+  .eyebrow::before {
+    content: "";
+    @apply h-px w-8 bg-green-500;
+  }
+
+  .eyebrow--gold {
+    @apply text-gold-600;
+  }
+
+  .eyebrow--gold::before {
+    @apply bg-gold-500;
+  }
+
+  .display {
+    @apply font-display font-medium text-ink;
+  }
+
+  /* Animated underline for inline links */
+  .link-underline {
+    @apply relative;
+  }
+
+  .link-underline::after {
+    content: "";
+    @apply absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-gold-500 transition-transform duration-300 ease-out;
+  }
+
+  .link-underline:hover::after,
+  .link-underline:focus-visible::after {
+    @apply scale-x-100;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .grain-overlay {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .grain-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--grain);
+    opacity: 0.025;
+    pointer-events: none;
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+
+  @keyframes transition-expand-fill {
+    from {
+      transform: scale(0);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes transition-shrink-panel {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0.5);
+    }
+  }
+
+  @keyframes transition-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+}
+
+/* ===== Falling-card testimonials (top-level, outside any @layer) ===== */
+@keyframes testimonial-fall {
+  0% {
+    transform: translateY(-360px) rotateY(0deg) rotate(-5deg);
+  }
+  30% {
+    transform: translateY(0px) rotateY(0deg) rotate(-2deg);
+  }
+  42% {
+    transform: translateY(90px) rotateY(180deg) rotate(1.5deg);
+  }
+  74% {
+    transform: translateY(110px) rotateY(180deg) rotate(0.5deg);
+  }
+  82% {
+    transform: translateY(180px) rotateY(360deg) rotate(-1.5deg);
+  }
+  100% {
+    transform: translateY(560px) rotateY(360deg) rotate(-4deg);
+  }
+}
+
+.testimonial-card-fall {
+  animation: testimonial-fall 7s cubic-bezier(0.45, 0, 0.25, 1) forwards;
+}
+
+/* ===== Pricing card peel transition ===== */
+@keyframes peel-off {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.4) rotate(var(--peel-rot, 8deg));
+  }
+}
+
+/* ---------------------------------------------
+   Motion system: consistent premium easing + accessibility
+   --------------------------------------------- */
+:root {
+  --ease-premium: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-snappy: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .testimonial-card-fall,
+  .animate-marquee {
+    animation: none !important;
+  }
+}
+
+/* ---------------------------------------------
+   Footer: refined links
+   --------------------------------------------- */
+.vovo-footer-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: rgba(245, 239, 225, 0.62);
+  transition:
+    color 0.25s var(--ease-snappy),
+    transform 0.25s var(--ease-snappy);
+}
+
+/* ---------------------------------------------
+   Global loading overlay: brand spiral wordmark
+   --------------------------------------------- */
+.vovo-spiral-char {
+  display: inline-block;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 700;
+  font-size: 1.45rem;
+  line-height: 1;
+  color: #1b1915;
+  text-shadow:
+    0 0 10px rgba(51, 84, 51, 0.35),
+    0 0 22px rgba(192, 133, 31, 0.22);
+  will-change: transform;
+}
+
+.vovo-spiral-char--gold {
+  color: #c0851f;
+  text-shadow:
+    0 0 10px rgba(192, 133, 31, 0.4),
+    0 0 22px rgba(51, 84, 51, 0.2);
+}
+
+@media (max-width: 640px) {
+  .vovo-spiral-char {
+    font-size: 1rem;
+  }
+}
+
+.vovo-footer-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, #c0851f 0%, rgba(192, 133, 31, 0) 90%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s var(--ease-premium);
+}
+
+.vovo-footer-link:hover {
+  color: #f5efe1;
+  transform: translateX(3px);
+}
+
+.vovo-footer-link:hover::after {
+  transform: scaleX(1);
+}
+
+.vovo-footer-link svg {
+  opacity: 0;
+  transform: translate(-5px, 5px);
+  transition:
+    opacity 0.3s var(--ease-snappy),
+    transform 0.3s var(--ease-snappy);
+}
+
+.vovo-footer-link:hover svg {
+  opacity: 1;
+  transform: translate(0, 0);
+}
