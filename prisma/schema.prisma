@@ -1,0 +1,453 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// USER & AUTH
+// ─────────────────────────────────────────────
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  avatarUrl     String?
+  role          UserRole       @default(CLIENT)
+  status        UserStatus     @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  sessions      Session[]
+  channels      Channel[]
+  contentItems  ContentItem[]
+  tickets       SupportTicket[]
+  subscription  Subscription?
+  invoices      Invoice[]
+
+  @@map("users")
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  userId      String
+  token       String   @unique
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  /// IP address of the session creator — used for anomaly detection
+  ipAddress   String?
+  /// User-agent string — used for active-session display
+  userAgent   String?
+  /// Updated on each authenticated request
+  lastSeenAt  DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ─────────────────────────────────────────────
+// CHANNEL & CONTENT
+// ─────────────────────────────────────────────
+
+model Channel {
+  id              String        @id @default(cuid())
+  userId          String
+  youtubeId       String
+  title           String
+  thumbnailUrl    String?
+  subscriberCount Int           @default(0)
+  videoCount      Int           @default(0)
+  niche           String?
+  /// FK to the shared knowledge-base record for this channel's niche
+  nicheId         String?
+  markets         String[]      @default(["en"])
+  tone            String?
+  /// Encrypted OAuth access token (AES-256-GCM)
+  accessToken     String?       @db.Text
+  /// Encrypted OAuth refresh token (AES-256-GCM)
+  refreshToken    String?       @db.Text
+  tokenExpiresAt  DateTime?
+  /// Whether this channel's content requires a fixed avatar/character
+  requiresAvatar  Boolean?
+  /// Character turnaround sheet images (front/back/sides) for visual consistency
+  avatarSheetUrls String[]      @default([])
+  connectedAt     DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentItems    ContentItem[]
+  nicheRecord     Niche?        @relation(fields: [nicheId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, youtubeId])
+  @@map("channels")
+}
+
+// ─────────────────────────────────────────────
+// CONTENT-NICHE KNOWLEDGE BASE
+// ─────────────────────────────────────────────
+
+/// A shared, evolving knowledge base for one content niche/category.
+/// Every channel in the same niche links to the same record, so
+/// knowledge learned from one channel benefits all of them.
+model Niche {
+  id               String         @id @default(cuid())
+  /// Canonical niche key, e.g. "technology", "gaming"
+  name             String         @unique
+  /// Human description of the niche (seeded from onboarding)
+  description      String?        @db.Text
+  /// DeepSeek market/audience/competitor analysis captured during onboarding
+  analysis         Json?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  /// When the daily research job last ran for this niche
+  lastResearchedAt DateTime?
+
+  bestPractices    BestPractice[]
+  thingsToAvoid    ThingToAvoid[]
+  mistakeLogs      MistakeLog[]
+  channels         Channel[]
+
+  @@map("niches")
+}
+
+/// What works / what to do, learned through research or experience
+model BestPractice {
+  id           String   @id @default(cuid())
+  nicheId      String
+  /// Short statement of what works / what to do
+  title        String
+  /// Explanation of how to apply it
+  description  String   @db.Text
+  /// Where this was learned ("initial research", "daily research", or a URL)
+  source       String?
+  discoveredAt DateTime @default(now())
+
+  niche        Niche    @relation(fields: [nicheId], references: [id], onDelete: Cascade)
+
+  @@unique([nicheId, title])
+  @@index([nicheId])
+  @@map("best_practices")
+}
+
+/// What not to do, learned through research or experience
+model ThingToAvoid {
+  id           String   @id @default(cuid())
+  nicheId      String
+  title        String
+  description  String   @db.Text
+  source       String?
+  discoveredAt DateTime @default(now())
+
+  niche        Niche    @relation(fields: [nicheId], references: [id], onDelete: Cascade)
+
+  @@unique([nicheId, title])
+  @@index([nicheId])
+  @@map("things_to_avoid")
+}
+
+/// A record of a specific mistake the AI made while producing content
+/// for this niche — checked against before producing future content.
+/// Shared across channels: one channel's mistake prevents the same
+/// mistake on every channel in the niche.
+model MistakeLog {
+  id          String   @id @default(cuid())
+  nicheId     String
+  /// Channel where the mistake happened (nullable — knowledge is shared)
+  channelId   String?
+  /// What the AI did wrong
+  title       String
+  /// Context: what happened
+  description String   @db.Text
+  /// What to do instead going forward
+  correction  String   @db.Text
+  occurredAt  DateTime @default(now())
+
+  niche       Niche    @relation(fields: [nicheId], references: [id], onDelete: Cascade)
+
+  @@index([nicheId])
+  @@map("mistake_logs")
+}
+
+/// Tracks every AI-managed video through its full lifecycle
+model ContentItem {
+  id              String          @id @default(cuid())
+  channelId       String
+  userId          String
+  title           String
+  /// Full AI-generated or human-edited script
+  scriptText      String?         @db.Text
+  /// Structured production plan (hook, scenes, visual prompts, voice direction)
+  productionPlan  Json?
+  /// JSON array of media asset URLs (thumbnail, video, etc.)
+  mediaUrls       String[]        @default([])
+  status          ContentStatus   @default(IDEA)
+  scheduledAt     DateTime?
+  publishedAt     DateTime?
+  /// Comments attached to the latest review action
+  reviewComment   String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  channel         Channel         @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  statusHistory   ContentStatusEvent[]
+
+  @@map("content_items")
+}
+
+/// Immutable log of every status transition on a ContentItem
+model ContentStatusEvent {
+  id            String        @id @default(cuid())
+  contentItemId String
+  fromStatus    ContentStatus?
+  toStatus      ContentStatus
+  /// Who triggered the transition: "ai_agent", "client", or an admin userId
+  actor         String
+  comment       String?
+  createdAt     DateTime      @default(now())
+
+  contentItem   ContentItem   @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@map("content_status_events")
+}
+
+// ─────────────────────────────────────────────
+// BILLING
+// ─────────────────────────────────────────────
+
+model Subscription {
+  id                  String             @id @default(cuid())
+  userId              String             @unique
+  plan                PlanTier           @default(STARTER)
+  status              SubscriptionStatus @default(TRIALING)
+  currentPeriodStart  DateTime
+  currentPeriodEnd    DateTime
+  cancelAtPeriodEnd   Boolean            @default(false)
+  /// TODO: connect real billing provider — store external subscription ID here
+  externalId          String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices            Invoice[]
+
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id                  String          @id @default(cuid())
+  subscriptionId      String
+  userId              String
+  amountCents         Int
+  currency            String          @default("usd")
+  status              InvoiceStatus   @default(PENDING)
+  billingPeriodStart  DateTime
+  billingPeriodEnd    DateTime
+  /// TODO: connect real billing provider — store external invoice/payment-intent ID here
+  externalId          String?
+  pdfUrl              String?
+  createdAt           DateTime        @default(now())
+
+  subscription        Subscription    @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+// ─────────────────────────────────────────────
+// SUPPORT
+// ─────────────────────────────────────────────
+
+model SupportTicket {
+  id          String         @id @default(cuid())
+  userId      String
+  subject     String
+  description String         @db.Text
+  priority    TicketPriority @default(NORMAL)
+  status      TicketStatus   @default(OPEN)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    TicketMessage[]
+
+  @@map("support_tickets")
+}
+
+model TicketMessage {
+  id        String        @id @default(cuid())
+  ticketId  String
+  /// null = system/AI message
+  userId    String?
+  content   String        @db.Text
+  /// true if the reply came from a staff/admin account
+  isStaff   Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_messages")
+}
+
+// ─────────────────────────────────────────────
+// AUDIT & SECURITY (ADMIN & SYSTEM LAYER)
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  action       String
+  actorId      String
+  actorRole    String?  @default("client")
+  targetUserId String?
+  metadata     Json?
+  ipAddress    String?
+  timestamp    DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model SecurityChatMessage {
+  id        String   @id @default(cuid())
+  sender    String   // "admin" | "guardian"
+  message   String   @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@map("security_chat_messages")
+}
+
+model SecurityEvent {
+  id        String   @id @default(cuid())
+  type      String   // "NEW_DEVICE_LOGIN", "FAILED_MAGIC_LINK", "RATE_LIMIT_EXCEEDED", "TEMPORARY_LOCKOUT"
+  email     String?
+  ipAddress String?
+  userAgent String?
+  severity  String   @default("INFO")
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@map("security_events")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum UserRole {
+  VISITOR
+  CLIENT
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum ContentStatus {
+  IDEA
+  SCRIPT
+  GENERATING
+  READY_FOR_REVIEW
+  SCHEDULED
+  PUBLISHED
+  REJECTED
+}
+
+enum PlanTier {
+  STARTER
+  GROWTH
+  AGENCY
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  PAUSED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_ON_CLIENT
+  RESOLVED
+  CLOSED
+}
+
+
+// ---------------------------------------------
+// SECRETS VAULT (admin-managed external API keys)
+// ---------------------------------------------
+
+/// Encrypted storage for external service API keys, managed from the
+/// admin panel. `encryptedValue` holds an AES-256-GCM ciphertext; the raw
+/// value is never stored or returned to the client.
+model ApiServiceKey {
+  id             String   @id @default(cuid())
+  serviceKey     String   @unique
+  label          String
+  envVar         String
+  encryptedValue String
+  updatedAt      DateTime @default(now())
+
+  @@map("api_service_keys")
+}
+
+/// Quota-saving cache for YouTube Data API responses.
+/// The free quota is 10,000 units/day — search.list alone costs 100 units,
+/// so every response is cached and reused before any new call is made.
+model YouTubeCache {
+  key       String   @id
+  payload   Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("youtube_cache")
+}
+
+/// Quota state for the web-search providers (Tavily primary, Serper fallback).
+/// Tavily renews monthly; Serper is a one-time balance that never renews.
+model SearchProviderState {
+  provider       String    @id
+  /// When set in the future, the provider is skipped until this moment
+  exhaustedUntil DateTime?
+  /// True when the provider must never be called again (Serper balance gone)
+  disabled       Boolean   @default(false)
+  lastError      String?
+  updatedAt      DateTime  @updatedAt
+
+  @@map("search_provider_state")
+}
+
+/// Cached web-search results — repeated/common queries never spend quota twice.
+model SearchCache {
+  key       String   @id
+  payload   Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("search_cache")
+}
