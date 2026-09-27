@@ -130,13 +130,20 @@ export async function applyReviewAction(params: {
         : undefined,
   });
 
+  const auditActionMap: Record<ApprovalAction, string> = {
+    approve: 'content.approved',
+    reject: 'content.rejected',
+    request_changes: 'content.changes_requested',
+  };
+
   await writeAuditLog({
-    action: `content.${params.action === 'request_changes' ? 'changes_requested' : params.action}d` as never,
+    action: auditActionMap[params.action] as never,
     actorId: params.userId,
     targetUserId: params.userId,
     metadata: { itemId: params.itemId, toStatus },
   });
 
+  return updated;
 }
 
 /** Create a new content item (typically called by the AI agent) */
@@ -146,9 +153,17 @@ export async function createContentItem(data: {
   title: string;
   scheduledAt?: Date;
 }) {
+  const channel = await prisma.channel.findFirst({
+    where: { id: data.channelId, userId: data.userId },
+    select: { id: true },
+  });
+  if (!channel) {
+    throw new Error('CHANNEL_NOT_FOUND_OR_UNAUTHORIZED');
+  }
+
   const item = await prisma.contentItem.create({
     data: {
-      channelId: data.channelId,
+      channelId: channel.id,
       userId: data.userId,
       title: data.title,
       status: 'IDEA',

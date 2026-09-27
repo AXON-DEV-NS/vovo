@@ -12,8 +12,8 @@ import {
 const RING_SIZE = 208; // px
 const ORBIT_R = 78; // px
 const TILT = 26; // deg
-const MS_PER_STAGE = 500;
-export const LOADER_MIN_MS = PIPELINE_COUNT * MS_PER_STAGE; // one full loop
+const MS_PER_STAGE = 300;
+export const LOADER_MIN_MS = 600; // Adaptive optical threshold (avoids jarring flash while keeping navigations fast)
 
 const easeInOutCubic = (t: number) =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;

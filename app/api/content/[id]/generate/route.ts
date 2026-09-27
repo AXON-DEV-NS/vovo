@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { checkUserAccess } from "@/lib/billing/subscription-service";
 import { advanceContentItemPipeline } from "@/lib/services/content";
+import { checkRateLimit } from "@/lib/security/guardian";
 
 /**
  * Advances one content item through the AI production pipeline:
@@ -15,6 +16,14 @@ export async function POST(
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rate = await checkRateLimit(`content_gen_${session.userId}`, 5, 60000);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Generation rate limit exceeded. Please wait a minute before generating again." },
+      { status: 429 }
+    );
+  }
 
   const access = await checkUserAccess(session.userId, session.email);
   if (!access.hasAccess) {
@@ -60,6 +69,12 @@ export async function POST(
           code: "COMPLIANCE_REQUIRED",
         },
         { status: 422 }
+      );
+    }
+    if (message.startsWith("HIGGSFIELD_NOT_CONFIGURED")) {
+      return NextResponse.json(
+        { error: "Video/thumbnail engine is not configured.", code: "VIDEO_ENGINE_NOT_CONFIGURED" },
+        { status: 503 }
       );
     }
     if (message.startsWith("DEEPSEEK_")) {

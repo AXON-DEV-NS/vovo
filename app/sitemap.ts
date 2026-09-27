@@ -2,7 +2,10 @@ import { MetadataRoute } from 'next';
 import { BLOG_POSTS } from '@/lib/blog/articles';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://vovo-agent.ai';
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    'https://vovo-five.vercel.app';
   const now = new Date();
 
   const staticRoutes = [

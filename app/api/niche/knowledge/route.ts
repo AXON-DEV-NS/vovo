@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth/session";
 import {
   getNicheKnowledge,
   KnowledgeBaseUnavailableError,
@@ -9,6 +10,11 @@ import {
  * channel — everything learned for that niche so far.
  */
 export async function GET(request: NextRequest) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   const niche = request.nextUrl.searchParams.get("niche");
 
   if (!niche) {

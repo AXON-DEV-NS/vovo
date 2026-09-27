@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { askDeepSeek } from "@/lib/ai-providers/deepseek";
+import { checkRateLimit } from "@/lib/security/guardian";
 
 /**
  * VOVO — the client's channel manager co-pilot.
@@ -24,6 +25,14 @@ const SYSTEM = [
 export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rate = await checkRateLimit(`agent_chat_${session.userId}`, 10, 60000);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait a minute before chatting again." },
+      { status: 429 }
+    );
+  }
 
   const body = await request.json().catch(() => ({}));
   const message = typeof body.message === "string" ? body.message.trim() : "";

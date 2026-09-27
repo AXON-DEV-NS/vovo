@@ -26,6 +26,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    if (
+      String(name).length > 100 ||
+      String(email).length > 150 ||
+      (subject && String(subject).length > 200) ||
+      String(message).length > 3000
+    ) {
+      return NextResponse.json(
+        { error: "One or more fields exceed maximum character limits." },
+        { status: 400 }
+      );
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json({ error: "Invalid email address" }, { status: 400 });

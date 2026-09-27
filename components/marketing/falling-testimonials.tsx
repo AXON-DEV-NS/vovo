@@ -14,19 +14,19 @@ const testimonials: Testimonial[] = [
     quote:
       "VOVO Agent AI completely transformed how I run my channel. I used to spend 20+ hours a week on content — now I spend two hours reviewing AI drafts.",
     author: "Sarah Chen",
-    role: "Tech Creator · 850K subscribers",
+    role: "Tech Creator · Beta Tester",
   },
   {
     quote:
       "The competitor analysis alone is worth the subscription. The AI found a content gap I never would have discovered on my own.",
     author: "Ahmed Al-Rashid",
-    role: "Business Channel · 320K subscribers",
+    role: "Business Channel · Early Access",
   },
   {
     quote:
       "I was skeptical about AI content, but the output quality rivals what my human team was producing — at a fraction of the cost.",
     author: "Maria Rodriguez",
-    role: "Lifestyle Creator · 1.2M subscribers",
+    role: "Lifestyle Creator · Pilot Creator",
   },
 ];
 

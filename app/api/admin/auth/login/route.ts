@@ -14,7 +14,11 @@ import { verifyTotp } from "@/lib/admin/totp";
 export async function POST(request: NextRequest) {
   const ipAddress = request.headers.get("x-forwarded-for") || "127.0.0.1";
   const userAgent = request.headers.get("user-agent") || "Unknown";
-  const email = (process.env.ADMIN_EMAIL || "oren.on.oren.25@gmail.com").trim().toLowerCase();
+  const rawAdminEmail = process.env.ADMIN_EMAIL;
+  if (!rawAdminEmail) {
+    return NextResponse.json({ error: "Admin login is not configured." }, { status: 500 });
+  }
+  const email = rawAdminEmail.trim().toLowerCase();
 
   // 1. Rate limiting
   const rateLimit = await checkRateLimit(`admin_login_${ipAddress}`, 5, 60000);
@@ -26,7 +30,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 2. Lockout after repeated failures
-  const lockout = isAccountLocked(email);
+  const lockout = await isAccountLocked(email);
   if (lockout.locked) {
     return NextResponse.json(
       {

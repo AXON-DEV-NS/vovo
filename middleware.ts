@@ -50,13 +50,19 @@ function applySecurityHeaders(res: NextResponse): NextResponse {
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   res.headers.set("X-XSS-Protection", "1; mode=block");
 
   // Strict CSP: locks down scripts, styles, and strictly enforces form-action 'self'
   // to guarantee no attacker can hijack or redirect checkout/payment forms externally.
+  const scriptSrc =
+    process.env.NODE_ENV === "production"
+      ? "script-src 'self' 'unsafe-inline' https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com"
+      : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com";
+
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com",
+    scriptSrc,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: https: blob: https://*.googleusercontent.com",
@@ -90,6 +96,11 @@ function stripLocale(pathname: string): string {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Apply security headers directly to /api routes without routing/locale overhead
+  if (pathname.startsWith("/api")) {
+    return applySecurityHeaders(NextResponse.next());
+  }
 
   // Permanently block and banish any 2fa / totp page attempt — force immediate redirect to homepage
   if (pathname.toLowerCase().includes("2fa") || pathname.toLowerCase().includes("totp")) {
@@ -139,5 +150,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  matcher: ["/((?!_next|_vercel|.*\\..*).*)"],
 };

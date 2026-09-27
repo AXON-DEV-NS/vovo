@@ -75,13 +75,15 @@ export function Navbar() {
           onClick={() => setMobileOpen(!mobileOpen)}
           className="md:hidden rounded-md p-2 text-ink-mute hover:bg-paper-low active:scale-95 transition-transform"
           aria-label="Toggle menu"
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-navigation"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </nav>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-line bg-paper-high animate-fade-in">
+        <div id="mobile-navigation" className="md:hidden border-t border-line bg-paper-high animate-fade-in">
           <div className="container-wide py-4 flex flex-col gap-1">
             {navLinks.map((link) => {
               const active = isActive(link.href);

@@ -25,9 +25,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let verifiedChannelId: string | undefined = undefined;
+    if (channelId) {
+      const { prisma } = await import("@/lib/db/prisma");
+      const channel = await prisma.channel.findFirst({
+        where: { id: channelId, userId: session.userId },
+        select: { id: true },
+      });
+      if (!channel) {
+        return NextResponse.json(
+          { ok: false, error: "Channel not found or unauthorized." },
+          { status: 404 }
+        );
+      }
+      verifiedChannelId = channel.id;
+    }
+
     const mistake = await logMistake({
       nicheName,
-      channelId,
+      channelId: verifiedChannelId,
       title,
       description,
       correction,

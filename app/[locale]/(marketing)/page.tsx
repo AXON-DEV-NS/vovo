@@ -45,10 +45,10 @@ function Hero() {
 
 function TrustedBy() {
   const stats = [
-    ["2.4M+", "Videos published"],
-    ["340%", "Average growth"],
-    ["12,000+", "Active channels"],
-    ["99.9%", "Uptime"],
+    ["100%", "YouTube compliant"],
+    ["24/7", "Autonomous research"],
+    ["4-Stage", "Production pipeline"],
+    ["Zero", "Prompt engineering"],
   ];
 
   return (
@@ -69,13 +69,12 @@ function TrustedBy() {
         </div>
 
         <div className="mt-16 flex flex-col items-center text-center">
-          <span className="eyebrow eyebrow--gold">Trusted by growing creators</span>
+          <span className="eyebrow eyebrow--gold">Built for autonomous growth</span>
           <h2 className="display mt-5 max-w-2xl text-balance text-display-md">
-            Creators hand us the keys. The numbers follow.
+            Creators hand us the keys. The agent does the rest.
           </h2>
           <p className="mt-5 max-w-md text-sm leading-relaxed text-ink-mute">
-            Real channels, real growth. Here&apos;s what a few of our creators
-            say after handing their channels over to the agent.
+            Feedback and preview results from early creators testing our automated pipeline and compliance gates.
           </p>
         </div>
 

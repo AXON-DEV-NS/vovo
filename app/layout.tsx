@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
-import { Fraunces, Inter, Noto_Sans_Arabic } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
 import { TransitionOverlay } from "@/components/ui/transition-overlay";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
@@ -9,26 +8,6 @@ import { GlobalLoadingGuard } from "@/components/ui/global-loading-guard";
 import { IntroSequence } from "@/components/marketing/intro-sequence";
 import { ThemeColorSync } from "@/components/ui/theme-color-sync";
 import "./globals.css";
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  display: "swap",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-// Arabic script support — used only inside the admin/control panel section.
-const notoSansArabic = Noto_Sans_Arabic({
-  subsets: ["arabic"],
-  variable: "--font-arabic",
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -38,12 +17,36 @@ export const metadata: Metadata = {
   description:
     "Your autonomous AI-powered YouTube channel manager. AI handles research, content creation, publishing, and optimization — you just approve.",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+    process.env.NEXT_PUBLIC_SITE_URL || "https://vovo-five.vercel.app"
   ),
   manifest: "/manifest.json",
   icons: {
-    icon: [{ url: "/icon.png", type: "image/png", sizes: "64x64" }],
-    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+    icon: [{ url: "/favicon-32.png", type: "image/png", sizes: "32x32" }],
+    apple: [{ url: "/icon-192.png", type: "image/png", sizes: "192x192" }],
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://vovo-five.vercel.app",
+    siteName: "VOVO Agent AI",
+    title: "VOVO Agent AI — Autonomous YouTube Channel Manager",
+    description:
+      "AI handles research, content creation, publishing, and optimization — you just approve.",
+    images: [
+      {
+        url: "/vovo25.jpg",
+        width: 1200,
+        height: 630,
+        alt: "VOVO Agent AI",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "VOVO Agent AI — Autonomous YouTube Channel Manager",
+    description:
+      "AI handles research, content creation, publishing, and optimization — you just approve.",
+    images: ["/vovo25.jpg"],
   },
   appleWebApp: {
     capable: true,
@@ -77,9 +80,15 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} dir="ltr" translate="no" className="notranslate">
-      <body
-        className={`${fraunces.variable} ${inter.variable} ${notoSansArabic.variable} font-sans antialiased bg-paper text-ink`}
-      >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="font-sans antialiased bg-paper text-ink">
         <NextIntlClientProvider messages={messages} locale={locale}>
           <ToastProvider>{children}</ToastProvider>
           <IntroSequence />

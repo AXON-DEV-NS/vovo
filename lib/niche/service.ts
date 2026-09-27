@@ -83,12 +83,21 @@ export async function getOrCreateNiche(name: string, description?: string) {
  */
 export async function linkChannelToNiche(
   channelId: string,
-  nicheName: string
+  nicheName: string,
+  userId?: string
 ) {
   assertConfigured();
   const key = normalizeNicheName(nicheName);
   const niche = await prisma.niche.findUnique({ where: { name: key } });
   if (!niche) return null;
+
+  if (userId) {
+    const channel = await prisma.channel.findFirst({
+      where: { id: channelId, userId },
+      select: { id: true },
+    });
+    if (!channel) return null;
+  }
 
   return prisma.channel.update({
     where: { id: channelId },

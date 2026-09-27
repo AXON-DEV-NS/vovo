@@ -322,10 +322,13 @@ export interface OverviewData {
 
 export async function getOverview(): Promise<OverviewData> {
   if (usingDatabase()) {
-    const [userCount, channelCount, contentCount, subs, errors] = await Promise.all([
+    const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [userCount, newUsersMonth, channelCount, contentCount, backlogCount, subs, errors] = await Promise.all([
       prisma.user.count(),
+      prisma.user.count({ where: { createdAt: { gte: monthAgo } } }),
       prisma.channel.count(),
       prisma.contentItem.count(),
+      prisma.contentItem.count({ where: { status: { in: ["SCRIPT", "GENERATING"] } } }),
       prisma.subscription.findMany(),
       prisma.securityEvent.count({ where: { severity: { in: ["WARNING", "CRITICAL"] } } }),
     ]);
@@ -341,15 +344,17 @@ export async function getOverview(): Promise<OverviewData> {
       (s) => s.status === "ACTIVE" || s.status === "TRIALING"
     ).length;
 
+    const uptimeHours = (process.uptime() / 3600).toFixed(1);
+
     return {
       totalUsers: userCount,
       activeChannels: channelCount,
       totalContentItems: contentCount,
       mrrFormatted: `$${(mrr / 100).toLocaleString()}`,
-      newUsersThisMonth: 0,
+      newUsersThisMonth: newUsersMonth,
       apiErrorRate: `${Math.min(9.9, Math.max(0.01, (errors / Math.max(1, userCount)) * 10)).toFixed(2)}%`,
-      queueBacklog: 0,
-      uptime: "99.98%",
+      queueBacklog: backlogCount,
+      uptime: `${uptimeHours}h live`,
       systemHealth: buildSystemHealth(),
       activeSubscriptions: activeSubs,
     };
@@ -624,7 +629,16 @@ function mergePlan(base: (typeof PLANS)[number], override?: { name?: string; mon
 }
 
 export async function getActivePlans(): Promise<PlanView[]> {
-  const overrides = usingDatabase() ? {} : getStore().planOverrides;
+  if (usingDatabase()) {
+    try {
+      const setting = await prisma.systemSetting.findUnique({ where: { key: "plan_overrides" } });
+      const overrides = (setting?.value as Record<string, { name?: string; monthlyPrice?: number; yearlyPrice?: number }>) || {};
+      return PLANS.map((p) => mergePlan(p, overrides[p.id]));
+    } catch (err) {
+      console.warn("[getActivePlans] DB lookup error:", err);
+    }
+  }
+  const overrides = getStore().planOverrides;
   return PLANS.map((p) => mergePlan(p, overrides[p.id]));
 }
 
@@ -636,7 +650,20 @@ export async function updatePlan(
   if (!base) return null;
 
   if (usingDatabase()) {
-    return mergePlan(base, patch);
+    try {
+      const setting = await prisma.systemSetting.findUnique({ where: { key: "plan_overrides" } });
+      const overrides = (setting?.value as Record<string, any>) || {};
+      overrides[id] = { ...(overrides[id] || {}), ...patch };
+      await prisma.systemSetting.upsert({
+        where: { key: "plan_overrides" },
+        create: { key: "plan_overrides", value: overrides },
+        update: { value: overrides },
+      });
+      return mergePlan(base, overrides[id]);
+    } catch (err) {
+      console.error("[updatePlan] DB save error:", err);
+      return mergePlan(base, patch);
+    }
   }
 
   const store = getStore();
@@ -662,6 +689,24 @@ export interface PromoCode {
 }
 
 export async function listPromoCodes(): Promise<PromoCode[]> {
+  if (usingDatabase()) {
+    try {
+      const items = await prisma.promoCode.findMany({ orderBy: { createdAt: "desc" } });
+      return items.map((p) => ({
+        id: p.id,
+        code: p.code,
+        discountType: p.discountType as "percent" | "fixed",
+        discountValue: p.discountValue,
+        active: p.active,
+        expiryDate: p.expiryDate ? p.expiryDate.toISOString() : null,
+        maxUses: p.maxUses,
+        usedCount: p.usedCount,
+        createdAt: p.createdAt.toISOString(),
+      }));
+    } catch (err) {
+      console.warn("[listPromoCodes] DB read error:", err);
+    }
+  }
   return [...getStore().promoCodes].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
@@ -674,9 +719,39 @@ export async function createPromoCode(input: {
   expiryDate?: string | null;
   maxUses?: number | null;
 }): Promise<PromoCode> {
-  const store = getStore();
   const code = input.code.trim().toUpperCase();
   if (!code) throw new Error("CODE_REQUIRED");
+
+  if (usingDatabase()) {
+    const existing = await prisma.promoCode.findUnique({ where: { code } });
+    if (existing) throw new Error("CODE_EXISTS");
+
+    const created = await prisma.promoCode.create({
+      data: {
+        code,
+        discountType: input.discountType,
+        discountValue: input.discountValue,
+        active: true,
+        expiryDate: input.expiryDate ? new Date(input.expiryDate) : null,
+        maxUses: input.maxUses ?? null,
+        usedCount: 0,
+      },
+    });
+
+    return {
+      id: created.id,
+      code: created.code,
+      discountType: created.discountType as "percent" | "fixed",
+      discountValue: created.discountValue,
+      active: created.active,
+      expiryDate: created.expiryDate ? created.expiryDate.toISOString() : null,
+      maxUses: created.maxUses,
+      usedCount: created.usedCount,
+      createdAt: created.createdAt.toISOString(),
+    };
+  }
+
+  const store = getStore();
   if (store.promoCodes.some((p) => p.code === code)) throw new Error("CODE_EXISTS");
 
   const promo: PromoCode = {
@@ -695,6 +770,14 @@ export async function createPromoCode(input: {
 }
 
 export async function deletePromoCode(id: string): Promise<boolean> {
+  if (usingDatabase()) {
+    try {
+      await prisma.promoCode.delete({ where: { id } });
+      return true;
+    } catch {
+      return false;
+    }
+  }
   const store = getStore();
   const i = store.promoCodes.findIndex((p) => p.id === id);
   if (i === -1) return false;
@@ -703,6 +786,14 @@ export async function deletePromoCode(id: string): Promise<boolean> {
 }
 
 export async function togglePromoCode(id: string, active: boolean): Promise<boolean> {
+  if (usingDatabase()) {
+    try {
+      await prisma.promoCode.update({ where: { id }, data: { active } });
+      return true;
+    } catch {
+      return false;
+    }
+  }
   const store = getStore();
   const promo = store.promoCodes.find((p) => p.id === id);
   if (!promo) return false;
@@ -715,8 +806,38 @@ export async function validatePromoCode(code: string): Promise<{
   promo?: PromoCode;
   message?: string;
 }> {
-  const store = getStore();
   const c = code.trim().toUpperCase();
+  if (usingDatabase()) {
+    try {
+      const promo = await prisma.promoCode.findUnique({ where: { code: c } });
+      if (!promo) return { valid: false, message: "This promo code is invalid." };
+      if (!promo.active) return { valid: false, message: "This promo code is not active." };
+      if (promo.expiryDate && promo.expiryDate.getTime() < Date.now()) {
+        return { valid: false, message: "This promo code has expired." };
+      }
+      if (promo.maxUses != null && promo.usedCount >= promo.maxUses) {
+        return { valid: false, message: "This promo code has reached its usage limit." };
+      }
+      return {
+        valid: true,
+        promo: {
+          id: promo.id,
+          code: promo.code,
+          discountType: promo.discountType as "percent" | "fixed",
+          discountValue: promo.discountValue,
+          active: promo.active,
+          expiryDate: promo.expiryDate ? promo.expiryDate.toISOString() : null,
+          maxUses: promo.maxUses,
+          usedCount: promo.usedCount,
+          createdAt: promo.createdAt.toISOString(),
+        },
+      };
+    } catch (err) {
+      console.warn("[validatePromoCode] DB lookup error:", err);
+    }
+  }
+
+  const store = getStore();
   const promo = store.promoCodes.find((p) => p.code === c);
   if (!promo) return { valid: false, message: "This promo code is invalid." };
   if (!promo.active) return { valid: false, message: "This promo code is not active." };
@@ -727,6 +848,24 @@ export async function validatePromoCode(code: string): Promise<{
     return { valid: false, message: "This promo code has reached its usage limit." };
   }
   return { valid: true, promo };
+}
+
+export async function incrementPromoCodeUsage(code: string): Promise<void> {
+  const c = code.trim().toUpperCase();
+  if (usingDatabase()) {
+    try {
+      await prisma.promoCode.update({
+        where: { code: c },
+        data: { usedCount: { increment: 1 } },
+      });
+      return;
+    } catch (err) {
+      console.warn("[incrementPromoCodeUsage] DB update error:", err);
+    }
+  }
+  const store = getStore();
+  const p = store.promoCodes.find((x) => x.code === c);
+  if (p) p.usedCount += 1;
 }
 
 // -------------------------------------------------------------
@@ -751,6 +890,47 @@ export interface FreeGrant {
 }
 
 export async function sendWarning(userId: string, message: string): Promise<UserNotice | null> {
+  const adminEmail = process.env.ADMIN_EMAIL || "admin";
+  if (usingDatabase()) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return null;
+
+    const notice = await prisma.userNotice.create({
+      data: {
+        userId: user.id,
+        email: user.email,
+        message,
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        action: "admin.user_warned",
+        actorId: adminEmail,
+        actorRole: "admin",
+        targetUserId: user.id,
+        metadata: { email: user.email, message },
+      },
+    });
+
+    await prisma.securityEvent.create({
+      data: {
+        type: "USER_WARNED",
+        email: user.email,
+        severity: "WARNING",
+        details: { message, actor: adminEmail },
+      },
+    });
+
+    return {
+      id: notice.id,
+      userId: notice.userId,
+      email: notice.email,
+      message: notice.message,
+      createdAt: notice.createdAt.toISOString(),
+    };
+  }
+
   const store = getStore();
   const user = store.users.find((u) => u.id === userId);
   if (!user) return null;
@@ -767,11 +947,11 @@ export async function sendWarning(userId: string, message: string): Promise<User
   store.auditLogs.unshift({
     id: `a_${Date.now()}`,
     action: "admin.user_warned",
-    actorId: "oren.on.oren.25@gmail.com",
+    actorId: adminEmail,
     actorRole: "admin",
     targetUserId: userId,
     metadata: { email: user.email, message },
-    ipAddress: "102.44.11.7",
+    ipAddress: null,
     timestamp: new Date().toISOString(),
   });
 
@@ -779,6 +959,23 @@ export async function sendWarning(userId: string, message: string): Promise<User
 }
 
 export async function getUserNotices(userId: string): Promise<UserNotice[]> {
+  if (usingDatabase()) {
+    try {
+      const items = await prisma.userNotice.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      });
+      return items.map((n) => ({
+        id: n.id,
+        userId: n.userId,
+        email: n.email,
+        message: n.message,
+        createdAt: n.createdAt.toISOString(),
+      }));
+    } catch (err) {
+      console.warn("[getUserNotices] DB lookup error:", err);
+    }
+  }
   return getStore().notices.filter((n) => n.userId === userId);
 }
 
@@ -787,6 +984,56 @@ export async function grantFreeAccess(input: {
   planId: string | null;
   durationDays: number;
 }): Promise<FreeGrant> {
+  const adminEmail = process.env.ADMIN_EMAIL || "admin";
+  if (usingDatabase()) {
+    const expiresAt = new Date(Date.now() + input.durationDays * 24 * 60 * 60 * 1000);
+    const grant = await prisma.freeGrant.create({
+      data: {
+        userId: input.userId,
+        planId: input.planId,
+        durationDays: input.durationDays,
+        expiresAt,
+      },
+    });
+
+    if (input.userId && input.planId) {
+      await prisma.subscription.upsert({
+        where: { userId: input.userId },
+        create: {
+          userId: input.userId,
+          plan: input.planId.toUpperCase() as any,
+          status: "ACTIVE",
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: expiresAt,
+        },
+        update: {
+          plan: input.planId.toUpperCase() as any,
+          status: "ACTIVE",
+          currentPeriodEnd: expiresAt,
+        },
+      });
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        action: "admin.free_access_granted",
+        actorId: adminEmail,
+        actorRole: "admin",
+        targetUserId: input.userId,
+        metadata: { planId: input.planId, durationDays: input.durationDays },
+      },
+    });
+
+    return {
+      id: grant.id,
+      userId: grant.userId,
+      planId: grant.planId,
+      durationDays: grant.durationDays,
+      expiresAt: grant.expiresAt.toISOString(),
+      createdAt: grant.createdAt.toISOString(),
+    };
+  }
+
   const store = getStore();
   const grant: FreeGrant = {
     id: `fg_${Date.now()}`,
@@ -808,11 +1055,11 @@ export async function grantFreeAccess(input: {
   store.auditLogs.unshift({
     id: `a_${Date.now()}`,
     action: "admin.free_access_granted",
-    actorId: "oren.on.oren.25@gmail.com",
+    actorId: adminEmail,
     actorRole: "admin",
     targetUserId: input.userId,
     metadata: { planId: input.planId, durationDays: input.durationDays },
-    ipAddress: "102.44.11.7",
+    ipAddress: null,
     timestamp: new Date().toISOString(),
   });
 
@@ -820,14 +1067,49 @@ export async function grantFreeAccess(input: {
 }
 
 export async function listFreeGrants(): Promise<FreeGrant[]> {
+  if (usingDatabase()) {
+    try {
+      const items = await prisma.freeGrant.findMany({ orderBy: { createdAt: "desc" } });
+      return items.map((g) => ({
+        id: g.id,
+        userId: g.userId,
+        planId: g.planId,
+        durationDays: g.durationDays,
+        expiresAt: g.expiresAt.toISOString(),
+        createdAt: g.createdAt.toISOString(),
+      }));
+    } catch (err) {
+      console.warn("[listFreeGrants] DB lookup error:", err);
+    }
+  }
   return [...getStore().freeGrants];
 }
 
 export async function getAutoTrialSetting(): Promise<boolean> {
+  if (usingDatabase()) {
+    try {
+      const setting = await prisma.systemSetting.findUnique({ where: { key: "auto_trial_enabled" } });
+      return Boolean(setting?.value);
+    } catch (err) {
+      console.warn("[getAutoTrialSetting] DB lookup error:", err);
+    }
+  }
   return getStore().autoTrialEnabled ?? false;
 }
 
 export async function setAutoTrialSetting(enabled: boolean): Promise<boolean> {
+  if (usingDatabase()) {
+    try {
+      await prisma.systemSetting.upsert({
+        where: { key: "auto_trial_enabled" },
+        create: { key: "auto_trial_enabled", value: enabled },
+        update: { value: enabled },
+      });
+      return enabled;
+    } catch (err) {
+      console.warn("[setAutoTrialSetting] DB update error:", err);
+    }
+  }
   const store = getStore();
   store.autoTrialEnabled = enabled;
   return store.autoTrialEnabled;
@@ -867,6 +1149,59 @@ export async function setUserSubscription(
 }
 
 export async function getActiveFreeGrant(userIdOrEmail?: string): Promise<FreeGrant | null> {
+  if (usingDatabase()) {
+    try {
+      const now = new Date();
+      // 1. Site-wide grant
+      const siteGrant = await prisma.freeGrant.findFirst({
+        where: { userId: null, expiresAt: { gt: now } },
+        orderBy: { createdAt: "desc" },
+      });
+      if (siteGrant) {
+        return {
+          id: siteGrant.id,
+          userId: null,
+          planId: siteGrant.planId,
+          durationDays: siteGrant.durationDays,
+          expiresAt: siteGrant.expiresAt.toISOString(),
+          createdAt: siteGrant.createdAt.toISOString(),
+        };
+      }
+
+      // 2. User-specific grant
+      if (userIdOrEmail) {
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { id: userIdOrEmail },
+              { email: userIdOrEmail.trim().toLowerCase() },
+            ],
+          },
+          select: { id: true },
+        });
+        if (user) {
+          const userGrant = await prisma.freeGrant.findFirst({
+            where: { userId: user.id, expiresAt: { gt: now } },
+            orderBy: { createdAt: "desc" },
+          });
+          if (userGrant) {
+            return {
+              id: userGrant.id,
+              userId: userGrant.userId,
+              planId: userGrant.planId,
+              durationDays: userGrant.durationDays,
+              expiresAt: userGrant.expiresAt.toISOString(),
+              createdAt: userGrant.createdAt.toISOString(),
+            };
+          }
+        }
+      }
+      return null;
+    } catch (err) {
+      console.warn("[getActiveFreeGrant] DB lookup error:", err);
+    }
+  }
+
   const store = getStore();
   const now = Date.now();
   const activeGrants = store.freeGrants.filter(
@@ -894,8 +1229,67 @@ export async function getActiveFreeGrant(userIdOrEmail?: string): Promise<FreeGr
 // -------------------------------------------------------------
 
 export async function getAccountReport(query: string) {
-  const store = getStore();
   const q = query.trim().toLowerCase();
+  if (usingDatabase()) {
+    try {
+      const user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { id: query.trim() },
+            { email: { equals: q, mode: "insensitive" } },
+            { name: { contains: q, mode: "insensitive" } },
+          ],
+        },
+        include: {
+          channels: { select: { id: true, title: true, subscriberCount: true } },
+          subscription: { select: { plan: true, status: true } },
+        },
+      });
+      if (!user) return null;
+
+      const [audit, security, notices, grants] = await Promise.all([
+        prisma.auditLog.findMany({
+          where: { OR: [{ actorId: user.email }, { targetUserId: user.id }] },
+          orderBy: { timestamp: "desc" },
+          take: 20,
+        }),
+        prisma.securityEvent.findMany({
+          where: { email: user.email },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        }),
+        prisma.userNotice.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.freeGrant.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: "desc" },
+        }),
+      ]);
+
+      return {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+          createdAt: user.createdAt.toISOString(),
+          channels: user.channels,
+          subscription: user.subscription,
+        },
+        audit: audit.map((l) => ({ ...l, timestamp: l.timestamp.toISOString() })),
+        security: security.map((s) => ({ ...s, createdAt: s.createdAt.toISOString() })),
+        notices: notices.map((n) => ({ ...n, createdAt: n.createdAt.toISOString() })),
+        grants: grants.map((g) => ({ ...g, expiresAt: g.expiresAt.toISOString(), createdAt: g.createdAt.toISOString() })),
+      };
+    } catch (err) {
+      console.warn("[getAccountReport] DB lookup error:", err);
+    }
+  }
+
+  const store = getStore();
   const user = store.users.find(
     (u) =>
       (u.email || "").toLowerCase() === q ||

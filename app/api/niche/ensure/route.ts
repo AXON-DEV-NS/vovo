@@ -37,8 +37,19 @@ export async function POST(request: NextRequest) {
 
     let linked = false;
     if (channelId && isKnowledgeBaseConfigured()) {
+      const { prisma } = await import("@/lib/db/prisma");
+      const channel = await prisma.channel.findFirst({
+        where: { id: channelId, userId: session.userId },
+        select: { id: true },
+      });
+      if (!channel) {
+        return NextResponse.json(
+          { ok: false, error: "Channel not found or does not belong to your account." },
+          { status: 404 }
+        );
+      }
       const { linkChannelToNiche } = await import("@/lib/niche/service");
-      linked = Boolean(await linkChannelToNiche(channelId, niche));
+      linked = Boolean(await linkChannelToNiche(channel.id, niche, session.userId));
     }
 
     const knowledge = await getNicheKnowledge(niche);

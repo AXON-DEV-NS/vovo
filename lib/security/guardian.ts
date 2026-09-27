@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/db/prisma';
 import { writeAuditLog } from '@/lib/services/audit';
+import { redis } from '@/lib/db/redis';
 
-// In-memory rate limiting & failed attempts tracker (resets on server restart or window expiry)
+// In-memory rate limiting & failed attempts tracker (fallback if Redis/DB is unavailable)
 interface AttemptRecord {
   count: number;
   firstAttempt: number;
@@ -15,14 +16,55 @@ const LOCKOUT_THRESHOLD = 5; // 5 failed attempts
 const LOCKOUT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 
+async function logRateLimitExceeded(key: string, limit: number, count: number, windowMs: number) {
+  try {
+    await prisma.securityEvent.create({
+      data: {
+        type: 'RATE_LIMIT_EXCEEDED',
+        ipAddress: key,
+        severity: 'WARNING',
+        details: { limit, count, windowMs },
+      },
+    });
+
+    await writeAuditLog({
+      action: 'auth.rate_limited',
+      actorId: key,
+      actorRole: 'system',
+      ipAddress: key,
+      metadata: { limit, count },
+    });
+  } catch (err) {
+    console.warn('[Security Guardian] DB write error during rate limit log:', err);
+  }
+}
+
 /**
  * Check and enforce rate limiting for sensitive endpoints.
+ * Backed by Upstash Redis if configured; falls back to in-memory store.
  */
 export async function checkRateLimit(
   key: string,
   limit: number = 10,
   windowMs: number = RATE_LIMIT_WINDOW_MS
 ): Promise<{ allowed: boolean; remaining: number }> {
+  if (redis) {
+    try {
+      const redisKey = `ratelimit:${key}`;
+      const count = await redis.incr(redisKey);
+      if (count === 1) {
+        await redis.pexpire(redisKey, windowMs);
+      }
+      if (count > limit) {
+        logRateLimitExceeded(key, limit, count, windowMs);
+        return { allowed: false, remaining: 0 };
+      }
+      return { allowed: true, remaining: limit - count };
+    } catch (err) {
+      console.warn('[Security Guardian] Redis error, falling back to memory rate limiter:', err);
+    }
+  }
+
   const now = Date.now();
   const record = rateLimitMap.get(key) || { count: 0, firstAttempt: now };
 
@@ -35,28 +77,7 @@ export async function checkRateLimit(
   rateLimitMap.set(key, record);
 
   if (record.count > limit) {
-    // Flag rate limit exceeded
-    try {
-      await prisma.securityEvent.create({
-        data: {
-          type: 'RATE_LIMIT_EXCEEDED',
-          ipAddress: key,
-          severity: 'WARNING',
-          details: { limit, count: record.count, windowMs },
-        },
-      });
-
-      await writeAuditLog({
-        action: 'auth.rate_limited',
-        actorId: key,
-        actorRole: 'system',
-        ipAddress: key,
-        metadata: { limit, count: record.count },
-      });
-    } catch (err) {
-      console.warn('[Security Guardian] DB write error during rate limit log:', err);
-    }
-
+    logRateLimitExceeded(key, limit, record.count, windowMs);
     return { allowed: false, remaining: 0 };
   }
 
@@ -65,23 +86,59 @@ export async function checkRateLimit(
 
 /**
  * Check if an email address is currently temporarily locked out due to failed logins.
+ * Persists across Serverless instances via DB SecurityEvents and Redis.
  */
-export function isAccountLocked(email: string): { locked: boolean; remainingSeconds: number } {
-  const record = failedAttemptsMap.get(email.toLowerCase());
-  if (!record || !record.lockedUntil) {
-    return { locked: false, remainingSeconds: 0 };
-  }
-
+export async function isAccountLocked(email: string): Promise<{ locked: boolean; remainingSeconds: number }> {
+  const normalized = email.toLowerCase().trim();
   const now = Date.now();
-  if (now > record.lockedUntil) {
-    failedAttemptsMap.delete(email.toLowerCase());
-    return { locked: false, remainingSeconds: 0 };
+
+  // 1. Check in-memory fast cache
+  const memRecord = failedAttemptsMap.get(normalized);
+  if (memRecord?.lockedUntil && memRecord.lockedUntil > now) {
+    return {
+      locked: true,
+      remainingSeconds: Math.ceil((memRecord.lockedUntil - now) / 1000),
+    };
   }
 
-  return {
-    locked: true,
-    remainingSeconds: Math.ceil((record.lockedUntil - now) / 1000),
-  };
+  // 2. Check Redis if available
+  if (redis) {
+    try {
+      const redisTtl = await redis.ttl(`lockout:${normalized}`);
+      if (redisTtl > 0) {
+        return { locked: true, remainingSeconds: redisTtl };
+      }
+    } catch (err) {
+      console.warn('[Security Guardian] Redis lockout check error:', err);
+    }
+  }
+
+  // 3. Check persistent database security events across serverless lambdas
+  if (process.env.DATABASE_URL) {
+    try {
+      const recentLockout = await prisma.securityEvent.findFirst({
+        where: {
+          type: 'TEMPORARY_LOCKOUT',
+          email: normalized,
+          createdAt: { gte: new Date(now - LOCKOUT_WINDOW_MS) },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (recentLockout) {
+        const lockoutTime = new Date(recentLockout.createdAt).getTime();
+        const elapsed = now - lockoutTime;
+        if (elapsed < LOCKOUT_WINDOW_MS) {
+          const remainingSeconds = Math.ceil((LOCKOUT_WINDOW_MS - elapsed) / 1000);
+          return { locked: true, remainingSeconds };
+        }
+      }
+    } catch (err) {
+      console.warn('[Security Guardian] DB lockout check error:', err);
+    }
+  }
+
+  return { locked: false, remainingSeconds: 0 };
 }
 
 /**
@@ -136,39 +193,52 @@ export async function recordAuthAttempt(params: {
         console.warn('[Security Guardian] DB write error during lockout:', err);
       }
 
-      return { success: false, lockedOut: true };
-    } else {
-      failedAttemptsMap.set(normalizedEmail, record);
-      // Log magic link attempt failure
-      try {
-        await prisma.securityEvent.create({
-          data: {
-            type: 'FAILED_MAGIC_LINK',
-            email: normalizedEmail,
-            ipAddress: params.ipAddress,
-            userAgent: params.userAgent,
-            severity: 'WARNING',
-            details: { attemptNumber: record.count },
-          },
-        });
+        if (redis) {
+          try {
+            await redis.set(`lockout:${normalizedEmail}`, '1', { ex: Math.ceil(LOCKOUT_WINDOW_MS / 1000) });
+          } catch (err) {
+            console.warn('[Security Guardian] Redis lockout set error:', err);
+          }
+        }
 
-        await writeAuditLog({
-          action: 'auth.magic_link_failed',
-          actorId: normalizedEmail,
-          actorRole: 'system',
-          ipAddress: params.ipAddress,
-          metadata: { attemptNumber: record.count },
-        });
-      } catch (err) {
-        console.warn('[Security Guardian] DB write error during failed login:', err);
+        return { success: false, lockedOut: true };
+      } else {
+        failedAttemptsMap.set(normalizedEmail, record);
+        // Log magic link attempt failure
+        try {
+          await prisma.securityEvent.create({
+            data: {
+              type: 'FAILED_MAGIC_LINK',
+              email: normalizedEmail,
+              ipAddress: params.ipAddress,
+              userAgent: params.userAgent,
+              severity: 'WARNING',
+              details: { attemptNumber: record.count },
+            },
+          });
+
+          await writeAuditLog({
+            action: 'auth.magic_link_failed',
+            actorId: normalizedEmail,
+            actorRole: 'system',
+            ipAddress: params.ipAddress,
+            metadata: { attemptNumber: record.count },
+          });
+        } catch (err) {
+          console.warn('[Security Guardian] DB write error during failed login:', err);
+        }
       }
+
+      return { success: false };
     }
 
-    return { success: false };
-  }
-
-  // Clear failures on successful authentication
-  failedAttemptsMap.delete(normalizedEmail);
+    // Clear failures on successful authentication
+    failedAttemptsMap.delete(normalizedEmail);
+    if (redis) {
+      try {
+        await redis.del(`lockout:${normalizedEmail}`);
+      } catch {}
+    }
 
   // Check for device/location anomaly
   let anomalyDetected = false;

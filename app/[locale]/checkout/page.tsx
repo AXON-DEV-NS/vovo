@@ -331,6 +331,14 @@ export default function CheckoutPage() {
     <div className="container-page py-10">
       <Progress status={status} />
 
+      {/* Demo / Sandbox Notice */}
+      <div className="mb-8 flex items-start gap-3 rounded-lg border border-gold/40 bg-gold/10 p-4 text-sm text-ink-mute">
+        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+        <div>
+          <span className="font-semibold text-ink">Demo / Sandbox Mode</span> — No real charges will be made. This checkout simulates payment verification. Any test card number passing the standard Luhn check (e.g., 4242 4242 4242 4242) works.
+        </div>
+      </div>
+
       <div className="grid gap-10 lg:grid-cols-5">
         {/* ===== Order summary ===== */}
         <aside className="lg:col-span-2">

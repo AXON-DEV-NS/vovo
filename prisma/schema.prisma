@@ -27,6 +27,8 @@ model User {
   tickets       SupportTicket[]
   subscription  Subscription?
   invoices      Invoice[]
+  freeGrants    FreeGrant[]
+  notices       UserNotice[]
 
   @@map("users")
 }
@@ -451,3 +453,59 @@ model SearchCache {
   @@index([expiresAt])
   @@map("search_cache")
 }
+
+// ─────────────────────────────────────────────
+// SYSTEM SETTINGS & ADMIN CONTROLS
+// ─────────────────────────────────────────────
+
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model PromoCode {
+  id           String    @id @default(cuid())
+  code         String    @unique
+  discountType String    // "percent" | "fixed"
+  discountValue Float
+  active       Boolean   @default(true)
+  expiryDate   DateTime?
+  maxUses      Int?
+  usedCount    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("promo_codes")
+}
+
+model FreeGrant {
+  id           String    @id @default(cuid())
+  userId       String?
+  planId       String?
+  durationDays Int
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("free_grants")
+}
+
+model UserNotice {
+  id        String   @id @default(cuid())
+  userId    String
+  email     String
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_notices")
+}
+

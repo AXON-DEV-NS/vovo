@@ -67,42 +67,38 @@ export class HiggsfieldAdapter implements AIProviderAdapter {
    */
   async generateVideo(params: GenerateVideoParams): Promise<VideoResult> {
     const { apiKey, apiBaseUrl } = await this.resolve();
-    if (apiKey) {
-      try {
-        const response = await fetch(`${apiBaseUrl}/video/generate`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            prompt: params.scriptText,
-            aspect_ratio: params.aspectRatio || '16:9',
-            style: params.style || 'cinematic',
-          }),
-        });
-        if (response.ok) {
-          const data = await response.json();
-          return {
-            videoUrl: data.video_url || data.videoUrl,
-            durationSeconds: data.duration || 60,
-            status: 'COMPLETED',
-            jobId: data.job_id || `hf_${Date.now()}`,
-            provider: this.name,
-          };
-        }
-      } catch (err) {
-        console.warn('[Higgsfield AI] Live API video call failed, falling back:', err);
-      }
+    if (!apiKey) {
+      throw new Error('HIGGSFIELD_NOT_CONFIGURED: Video generation engine API key is not configured.');
     }
 
-    return {
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      durationSeconds: 120,
-      status: 'COMPLETED',
-      jobId: `hf_mock_${Date.now()}`,
-      provider: `${this.name} (Fallback Mode)`,
-    };
+    try {
+      const response = await fetch(`${apiBaseUrl}/video/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          prompt: params.scriptText,
+          aspect_ratio: params.aspectRatio || '16:9',
+          style: params.style || 'cinematic',
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          videoUrl: data.video_url || data.videoUrl,
+          durationSeconds: data.duration || 60,
+          status: 'COMPLETED',
+          jobId: data.job_id || `hf_${Date.now()}`,
+          provider: this.name,
+        };
+      }
+      throw new Error(`Video API error: ${response.statusText}`);
+    } catch (err) {
+      console.error('[Higgsfield AI] Live API video call failed:', err);
+      throw err;
+    }
   }
 
   /**
@@ -110,35 +106,34 @@ export class HiggsfieldAdapter implements AIProviderAdapter {
    */
   async generateThumbnail(params: GenerateThumbnailParams): Promise<ThumbnailResult> {
     const { apiKey, apiBaseUrl } = await this.resolve();
-    if (apiKey) {
-      try {
-        const response = await fetch(`${apiBaseUrl}/image/generate`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            prompt: params.prompt || `High-CTR YouTube thumbnail for: ${params.title}`,
-            aspect_ratio: '16:9',
-          }),
-        });
-        if (response.ok) {
-          const data = await response.json();
-          return {
-            thumbnailUrl: data.image_url || data.imageUrl,
-            provider: this.name,
-          };
-        }
-      } catch (err) {
-        console.warn('[Higgsfield AI] Live API thumbnail call failed, falling back:', err);
-      }
+    if (!apiKey) {
+      throw new Error('HIGGSFIELD_NOT_CONFIGURED: Thumbnail generation engine API key is not configured.');
     }
 
-    return {
-      thumbnailUrl: `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80`,
-      provider: `${this.name} (Fallback Mode)`,
-    };
+    try {
+      const response = await fetch(`${apiBaseUrl}/image/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          prompt: params.prompt || `High-CTR YouTube thumbnail for: ${params.title}`,
+          aspect_ratio: '16:9',
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          thumbnailUrl: data.image_url || data.imageUrl,
+          provider: this.name,
+        };
+      }
+      throw new Error(`Thumbnail API error: ${response.statusText}`);
+    } catch (err) {
+      console.error('[Higgsfield AI] Live API thumbnail call failed:', err);
+      throw err;
+    }
   }
 
   /**
@@ -146,49 +141,39 @@ export class HiggsfieldAdapter implements AIProviderAdapter {
    */
   async analyzeTrends(params: AnalyzeTrendsParams): Promise<TrendAnalysisResult> {
     const { apiKey, apiBaseUrl } = await this.resolve();
-    if (apiKey) {
-      try {
-        const response = await fetch(`${apiBaseUrl}/trends/analyze`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify(params),
-        });
-        if (response.ok) {
-          const data = await response.json();
-          return {
-            niche: params.niche,
-            topics: data.topics || [],
-            provider: this.name,
-          };
-        }
-      } catch (err) {
-        console.warn('[Higgsfield AI] Live API trend analysis call failed, falling back:', err);
+    if (!apiKey) {
+      return {
+        niche: params.niche,
+        topics: [],
+        provider: this.name,
+      };
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/trends/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(params),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          niche: params.niche,
+          topics: data.topics || [],
+          provider: this.name,
+        };
       }
+    } catch (err) {
+      console.error('[Higgsfield AI] Live API trend analysis call failed:', err);
     }
 
     return {
       niche: params.niche,
-      topics: [
-        {
-          title: `Breakthrough AI Agents in ${params.niche}`,
-          score: 98,
-          reason: 'Explosive search volume (+240% week over week)',
-        },
-        {
-          title: `How to Automate ${params.niche} Workflows in 2026`,
-          score: 94,
-          reason: 'High audience retention and demand',
-        },
-        {
-          title: `Top 5 Tools Disrupting ${params.niche}`,
-          score: 89,
-          reason: 'High click-through rate across benchmark channels',
-        },
-      ],
-      provider: `${this.name} (Fallback Mode)`,
+      topics: [],
+      provider: this.name,
     };
   }
 }

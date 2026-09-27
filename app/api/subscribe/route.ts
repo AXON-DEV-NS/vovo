@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PLANS } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/security/guardian";
-import { setUserSubscription, usingDatabase } from "@/lib/admin/data";
+import { setUserSubscription, usingDatabase, validatePromoCode, incrementPromoCodeUsage } from "@/lib/admin/data";
 import { prisma } from "@/lib/db/prisma";
 import { getSession } from "@/lib/auth/session";
 
@@ -124,12 +124,28 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const price = billing === "yearly" ? plan.yearlyPrice : plan.monthlyPrice;
+  const basePrice = billing === "yearly" ? plan.yearlyPrice : plan.monthlyPrice;
+  let price = basePrice;
+  const promoCode = typeof body.promoCode === "string" ? body.promoCode.trim().toUpperCase() : "";
+
+  if (promoCode) {
+    const promoValidation = await validatePromoCode(promoCode);
+    if (promoValidation.valid && promoValidation.promo) {
+      if (promoValidation.promo.discountType === "percent") {
+        price = Math.max(0, Math.round(basePrice * (1 - promoValidation.promo.discountValue / 100)));
+      } else {
+        price = Math.max(0, basePrice - promoValidation.promo.discountValue);
+      }
+      await incrementPromoCodeUsage(promoCode);
+    }
+  }
 
   console.log("[Subscribe] Payment simulated:", {
     plan: plan.name,
     billing,
+    basePrice,
     price,
+    promoCode: promoCode || null,
     email,
     at: new Date().toISOString(),
   });

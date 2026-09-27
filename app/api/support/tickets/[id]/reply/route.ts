@@ -18,6 +18,13 @@ export async function POST(
     return NextResponse.json({ error: 'Reply content is required.' }, { status: 400 });
   }
 
+  if (content.trim().length > 5000) {
+    return NextResponse.json(
+      { error: 'Reply content cannot exceed 5000 characters.' },
+      { status: 400 }
+    );
+  }
+
   try {
     const message = await addTicketReply({
       ticketId: id,

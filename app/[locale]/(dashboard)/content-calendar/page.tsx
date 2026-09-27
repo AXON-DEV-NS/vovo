@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/lib/i18n/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 type ContentStatus =
@@ -91,79 +92,45 @@ export default function ContentCalendarPage() {
   useEffect(() => {
     const fetchItems = async () => {
       setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate API delay
-
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth();
-
-      const MOCK_ITEMS: ContentItem[] = [
-        {
-          id: "1",
-          title: "How AI is Changing YouTube in 2026",
-          status: "PUBLISHED",
-          channelId: "ch1",
-          channelTitle: "Tech Insights",
-          scheduledAt: new Date(year, month, 1).toISOString(),
-          scriptText: "...",
-          statusHistory: [],
-        },
-        {
-          id: "2",
-          title: "Top 10 AI Tools for Creators",
-          status: "READY_FOR_REVIEW",
-          channelId: "ch1",
-          channelTitle: "Tech Insights",
-          scheduledAt: new Date(year, month, 5).toISOString(),
-          scriptText:
-            "Hello and welcome back to Tech Insights! Today we're looking at the top 10 AI tools that every creator should be using right now.\n\nFirst up, let's talk about automated script generation...",
-          statusHistory: [],
-        },
-        {
-          id: "3",
-          title: "The Future of Autonomous Agents",
-          status: "SCRIPT",
-          channelId: "ch1",
-          channelTitle: "Tech Insights",
-          scheduledAt: new Date(year, month, 10).toISOString(),
-          scriptText: "...",
-          statusHistory: [],
-        },
-        {
-          id: "4",
-          title: "How AI is changing content",
-          status: "GENERATING",
-          channelId: "ch2",
-          channelTitle: "AI Daily",
-          scheduledAt: new Date(year, month, 15).toISOString(),
-          scriptText: "",
-          statusHistory: [],
-        },
-        {
-          id: "5",
-          title: "Building a 100K Channel with AI Automation",
-          status: "SCHEDULED",
-          channelId: "ch1",
-          channelTitle: "Tech Insights",
-          scheduledAt: new Date(year, month, 20).toISOString(),
-          scriptText: "...",
-          statusHistory: [],
-        },
-        {
-          id: "6",
-          title: "AI vs Human Content: The Truth",
-          status: "IDEA",
-          channelId: "ch2",
-          channelTitle: "AI Daily",
-          scheduledAt: new Date(year, month, 25).toISOString(),
-          scriptText: "",
-          statusHistory: [],
-        },
-      ];
-      setItems(MOCK_ITEMS);
+      try {
+        const res = await fetch("/api/content");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setItems(
+              data.map((item: any) => ({
+                id: item.id,
+                title: item.title,
+                status: item.status,
+                channelId: item.channelId,
+                channelTitle: item.channel?.title || "My Channel",
+                scheduledAt: item.scheduledAt || item.createdAt,
+                scriptText: item.scriptText || "",
+                statusHistory: item.statusHistory || [],
+              }))
+            );
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load content calendar items:", err);
+      }
+      setItems([]);
       setLoading(false);
     };
     fetchItems();
   }, [currentDate]);
+
+  const availableChannels = useMemo(() => {
+    const map = new Map<string, string>();
+    items.forEach((it) => {
+      if (it.channelId && it.channelTitle) {
+        map.set(it.channelId, it.channelTitle);
+      }
+    });
+    return Array.from(map.entries()).map(([id, title]) => ({ id, title }));
+  }, [items]);
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -300,6 +267,27 @@ export default function ContentCalendarPage() {
         </div>
       </div>
 
+      {!loading && items.length === 0 && (
+        <Card className="p-8 text-center bg-paper-high border-dashed border-2 border-line">
+          <div className="mx-auto max-w-md space-y-3">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-paper-low text-ink">
+              <Calendar className="h-6 w-6 text-gold" />
+            </div>
+            <h2 className="text-lg font-semibold text-ink">No scheduled content yet</h2>
+            <p className="text-sm text-ink-mute">
+              Your autonomous AI agent will plan, script, and schedule content items according to your niche research. You can also generate ideas directly from your connected channels.
+            </p>
+            <div className="pt-2">
+              <Link href="/channels">
+                <Button variant="primary" size="sm">
+                  Go to Channels & Start Generation
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card>
         <CardHeader className="border-b border-paper-low pb-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -320,8 +308,11 @@ export default function ContentCalendarPage() {
                   onChange={(e) => setSelectedChannel(e.target.value)}
                 >
                   <option value="all">{t("allChannels")}</option>
-                  <option value="ch1">Tech Insights</option>
-                  <option value="ch2">AI Daily</option>
+                  {availableChannels.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="flex items-center gap-2 rounded-lg border border-line bg-paper-high px-3 py-1.5 text-sm text-ink-soft">

@@ -4,6 +4,7 @@ import { saveOtp } from "@/lib/auth/otp-store";
 import { sendNotificationEmail } from "@/lib/email/notifier";
 import { prisma } from "@/lib/db/prisma";
 import { getUserRecord } from "@/lib/admin/data";
+import { checkRateLimit } from "@/lib/security/guardian";
 
 const rateLimitMap = new Map<string, number>();
 
@@ -22,6 +23,15 @@ async function accountExists(email: string): Promise<boolean> {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+    const ipRate = await checkRateLimit(`otp_send_ip_${ip}`, 5, 60000);
+    if (!ipRate.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait a minute before requesting another code." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const mode = body.mode === "signin" ? "signin" : body.mode === "signup" ? "signup" : null;
@@ -97,13 +107,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!result.success) {
-      // OTP is still stored, but no real email was delivered — be honest.
+      console.error("[OTP Send Error]", result.error);
       return NextResponse.json(
         {
           success: false,
-          error:
-            result.error ||
-            "Email provider is not configured. The verification code could not be emailed.",
+          error: "Failed to deliver verification code. Please check your email or try again later.",
         },
         { status: 500 }
       );

@@ -27,16 +27,49 @@ export function IntroSequence() {
   const [leaving, setLeaving] = useState(false);
   const finishedRef = useRef(false);
 
-  useEffect(() => {
-    setState("running");
-  }, []);
-
   function finish() {
     if (finishedRef.current) return;
     finishedRef.current = true;
+    try {
+      sessionStorage.setItem("vovo_intro_seen", "true");
+    } catch {
+      // ignore storage errors
+    }
     setLeaving(true);
     window.setTimeout(() => setState("done"), 650);
   }
+
+  useEffect(() => {
+    // Check if user already saw the intro this session or prefers reduced motion
+    try {
+      if (sessionStorage.getItem("vovo_intro_seen") === "true") {
+        setState("done");
+        return;
+      }
+    } catch {
+      // ignore
+    }
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      try {
+        sessionStorage.setItem("vovo_intro_seen", "true");
+      } catch {
+        // ignore
+      }
+      setState("done");
+      return;
+    }
+
+    setState("running");
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        finish();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (state !== "running") return;

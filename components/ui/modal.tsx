@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, type HTMLAttributes, useEffect, useCallback } from "react";
+import { forwardRef, type HTMLAttributes, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/cn";
 import { X } from "lucide-react";
 
@@ -20,23 +20,66 @@ const sizeClasses = {
 
 const Modal = forwardRef<HTMLDivElement, ModalProps>(
   ({ className, open, onClose, title, description, size = "md", children, ...props }, ref) => {
-    const handleEscape = useCallback(
+    const dialogRef = useRef<HTMLDivElement | null>(null);
+    const triggerRef = useRef<HTMLElement | null>(null);
+
+    const handleKeyDown = useCallback(
       (e: KeyboardEvent) => {
-        if (e.key === "Escape") onClose();
+        if (e.key === "Escape") {
+          onClose();
+          return;
+        }
+
+        if (e.key === "Tab" && dialogRef.current) {
+          const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusables.length === 0) return;
+
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+
+          if (e.shiftKey) {
+            if (document.activeElement === first) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else {
+            if (document.activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }
       },
       [onClose]
     );
 
     useEffect(() => {
       if (open) {
-        document.addEventListener("keydown", handleEscape);
+        triggerRef.current = document.activeElement as HTMLElement | null;
+        document.addEventListener("keydown", handleKeyDown);
         document.body.style.overflow = "hidden";
+
+        const timer = setTimeout(() => {
+          if (dialogRef.current) {
+            const first = dialogRef.current.querySelector<HTMLElement>(
+              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            first?.focus();
+          }
+        }, 50);
+
+        return () => {
+          clearTimeout(timer);
+          document.removeEventListener("keydown", handleKeyDown);
+          document.body.style.overflow = "";
+          if (triggerRef.current && typeof triggerRef.current.focus === "function") {
+            triggerRef.current.focus();
+          }
+        };
       }
-      return () => {
-        document.removeEventListener("keydown", handleEscape);
-        document.body.style.overflow = "";
-      };
-    }, [open, handleEscape]);
+    }, [open, handleKeyDown]);
 
     if (!open) return null;
 
@@ -48,7 +91,14 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
           aria-hidden="true"
         />
         <div
-          ref={ref}
+          ref={(node) => {
+            dialogRef.current = node;
+            if (typeof ref === "function") {
+              ref(node);
+            } else if (ref) {
+              (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+            }
+          }}
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? "modal-title" : undefined}

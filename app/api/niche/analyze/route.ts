@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { analyzeNiche } from "@/lib/niche/analysis";
 import { normalizeNicheName } from "@/lib/niche/service";
 import { prisma } from "@/lib/db/prisma";
+import { checkRateLimit } from "@/lib/security/guardian";
 
 /**
  * Onboarding market analysis: the strategist persona studies the niche,
@@ -12,6 +13,14 @@ import { prisma } from "@/lib/db/prisma";
 export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rate = await checkRateLimit(`niche_analyze_${session.userId}`, 5, 60000);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Too many analysis requests. Please wait a minute before analyzing again." },
+      { status: 429 }
+    );
+  }
 
   const body = await request.json().catch(() => ({}));
   const niche = typeof body.niche === "string" ? body.niche.trim() : "";

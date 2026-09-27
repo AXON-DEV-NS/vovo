@@ -11,8 +11,15 @@ import { writeAuditLog } from "@/lib/services/audit";
 function encryptionKey(): Buffer {
   const envHex = process.env.SECRETS_ENCRYPTION_KEY;
   if (envHex && /^[a-f0-9]{64}$/i.test(envHex)) return Buffer.from(envHex, "hex");
-  const base = process.env.NEXTAUTH_SECRET || "vovo-dev-insecure-do-not-use-prod";
-  return crypto.createHash("sha256").update(base).digest();
+  if (process.env.NEXTAUTH_SECRET) {
+    return crypto.createHash("sha256").update(process.env.NEXTAUTH_SECRET).digest();
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Fatal Security Error: SECRETS_ENCRYPTION_KEY or NEXTAUTH_SECRET must be configured in production."
+    );
+  }
+  return crypto.createHash("sha256").update("vovo-dev-local-only-key").digest();
 }
 
 export function encryptSecret(plaintext: string): string {

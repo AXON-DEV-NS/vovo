@@ -85,24 +85,7 @@ export async function checkUserAccess(userId: string, email: string): Promise<Us
     }
   }
 
-  // 3. In-memory / dev store evaluation
-  const userRecord = await getUserRecord(cleanEmail || userId);
-
-  // 3a. User has active paid subscription
-  if (userRecord?.subscription && userRecord.subscription.status === "ACTIVE") {
-    const pId = userRecord.subscription.plan.toLowerCase();
-    const plan = PLANS.find((p) => p.id === pId) || PLANS[0];
-    return {
-      hasAccess: true,
-      status: "ACTIVE",
-      reason: "ACTIVE_SUBSCRIPTION",
-      planId: plan.id,
-      planName: plan.name,
-      message: `Subscription active — ${plan.name} plan`,
-    };
-  }
-
-  // 3b. Check active promotional event / free grant (site-wide or user-specific)
+  // 3. Check active promotional event / free grant (site-wide or user-specific)
   const activeGrant = await getActiveFreeGrant(cleanEmail || userId);
   if (activeGrant) {
     const now = Date.now();
@@ -124,37 +107,74 @@ export async function checkUserAccess(userId: string, email: string): Promise<Us
     };
   }
 
-  // 3c. Auto Free Trial check (if enabled by admin)
+  // 4. Auto Free Trial check (if enabled by admin)
   const autoTrial = await getAutoTrialSetting();
-  if (autoTrial && userRecord?.createdAt) {
-    const signupTime = new Date(userRecord.createdAt).getTime();
-    const trialDuration = TRIAL_DAYS * 24 * 60 * 60 * 1000;
-    const now = Date.now();
-    if (now - signupTime < trialDuration) {
-      const daysRemaining = Math.max(1, Math.ceil((trialDuration - (now - signupTime)) / (1000 * 60 * 60 * 24)));
+  if (autoTrial) {
+    let createdAt: Date | null = null;
+    if (process.env.DATABASE_URL) {
+      try {
+        const dbUser = await prisma.user.findFirst({
+          where: {
+            OR: [
+              ...(userId ? [{ id: userId }] : []),
+              ...(cleanEmail ? [{ email: cleanEmail }] : []),
+            ],
+          },
+          select: { createdAt: true },
+        });
+        createdAt = dbUser?.createdAt ?? null;
+      } catch {}
+    } else {
+      const devRecord = await getUserRecord(cleanEmail || userId);
+      createdAt = devRecord?.createdAt ? new Date(devRecord.createdAt) : null;
+    }
+
+    if (createdAt) {
+      const signupTime = createdAt.getTime();
+      const trialDuration = TRIAL_DAYS * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      if (now - signupTime < trialDuration) {
+        const daysRemaining = Math.max(1, Math.ceil((trialDuration - (now - signupTime)) / (1000 * 60 * 60 * 24)));
+        return {
+          hasAccess: true,
+          status: "TRIALING",
+          reason: "TRIAL_ACTIVE",
+          planId: "starter",
+          planName: "Starter (Trial)",
+          daysRemaining,
+          message: `⚡ Trial active (${daysRemaining} days remaining)`,
+        };
+      }
+    }
+  }
+
+  // 5. In-memory / dev store evaluation (ONLY in local development without DATABASE_URL)
+  if (!process.env.DATABASE_URL) {
+    const userRecord = await getUserRecord(cleanEmail || userId);
+    if (userRecord?.subscription && userRecord.subscription.status === "ACTIVE") {
+      const pId = userRecord.subscription.plan.toLowerCase();
+      const plan = PLANS.find((p) => p.id === pId) || PLANS[0];
+      return {
+        hasAccess: true,
+        status: "ACTIVE",
+        reason: "ACTIVE_SUBSCRIPTION",
+        planId: plan.id,
+        planName: plan.name,
+        message: `Subscription active — ${plan.name} plan`,
+      };
+    }
+
+    if (userRecord?.subscription && userRecord.subscription.status === "TRIALING") {
       return {
         hasAccess: true,
         status: "TRIALING",
         reason: "TRIAL_ACTIVE",
-        planId: "starter",
-        planName: "Starter (Trial)",
-        daysRemaining,
-        message: `⚡ Trial active (${daysRemaining} days remaining)`,
+        planId: userRecord.subscription.plan.toLowerCase(),
+        planName: userRecord.subscription.plan,
+        daysRemaining: 14,
+        message: `⚡ Trial active (14 days remaining)`,
       };
     }
-  }
-
-  // 3d. User record explicitly flagged as TRIALING
-  if (userRecord?.subscription && userRecord.subscription.status === "TRIALING") {
-    return {
-      hasAccess: true,
-      status: "TRIALING",
-      reason: "TRIAL_ACTIVE",
-      planId: userRecord.subscription.plan.toLowerCase(),
-      planName: userRecord.subscription.plan,
-      daysRemaining: 14,
-      message: `⚡ Trial active (14 days remaining)`,
-    };
   }
 
   // 4. No active subscription, no event, no trial -> Locked

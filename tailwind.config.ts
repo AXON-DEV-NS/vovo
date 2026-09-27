@@ -46,8 +46,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ["var(--font-fraunces)", "Georgia", "serif"],
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        display: ["var(--font-fraunces, 'Fraunces')", "Georgia", "serif"],
+        sans: ["var(--font-inter, 'Inter')", "system-ui", "sans-serif"],
       },
       fontSize: {
         "display-xl": ["4.5rem", { lineHeight: "1.02", letterSpacing: "-0.02em" }],
