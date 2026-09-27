@@ -32,8 +32,14 @@ function GoogleSignInButton({ label, returnUrl }: { label: string; returnUrl?: s
   async function onClick() {
     setError("");
     setLoading(true);
+    const fbAuth = auth;
+    if (!fbAuth) {
+      setError("Google sign-in isn't configured yet. Please use the email verification code instead.");
+      setLoading(false);
+      return;
+    }
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(fbAuth, googleProvider);
       const idToken = await result.user.getIdToken();
 
       const res = await fetch("/api/auth/firebase", {
