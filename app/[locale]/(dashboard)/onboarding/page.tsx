@@ -674,7 +674,7 @@ export default function OnboardingPage() {
                                   : "border-line bg-paper hover:border-ink-faint"
                             }`}
                           >
-                            <div className="mb-2 flex items-center justify-between">
+                            <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
                               <p className="font-semibold text-ink">{plan.name}</p>
                               {plan.popular && (
                                 <Badge className="bg-gold-100 text-gold-800 border-gold-200">Popular</Badge>
@@ -842,7 +842,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   {canGoBack ? (
                     <button
                       onClick={() => setStep((step - 1) as Step)}
@@ -935,7 +935,7 @@ export default function OnboardingPage() {
                   ) : null}
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <button
                     onClick={() => setStep(4)}
                     className="inline-flex items-center gap-1 text-sm text-ink-mute hover:text-ink"
@@ -1029,7 +1029,7 @@ export default function OnboardingPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                       <button
                         onClick={() => setStep(5)}
                         className="inline-flex items-center gap-1 text-sm text-ink-mute hover:text-ink"
@@ -1050,7 +1050,7 @@ export default function OnboardingPage() {
                         still add one later from your channel settings if your format changes.
                       </p>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                       <button
                         onClick={() => setStep(5)}
                         className="inline-flex items-center gap-1 text-sm text-ink-mute hover:text-ink"
@@ -1096,7 +1096,7 @@ export default function OnboardingPage() {
                   />
                   <p className="mt-1 text-right text-xs text-ink-faint">{instructions.length}/2000</p>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <button
                     onClick={() => setStep(6)}
                     className="inline-flex items-center gap-1 text-sm text-ink-mute hover:text-ink"
@@ -1148,7 +1148,7 @@ export default function OnboardingPage() {
                     </button>
                   ))}
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <button
                     onClick={() => setStep(7)}
                     className="inline-flex items-center gap-1 text-sm text-ink-mute hover:text-ink"

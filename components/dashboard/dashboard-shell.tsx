@@ -178,9 +178,8 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
-            <button className="relative rounded-lg p-2 text-ink-mute hover:bg-paper-low" title="Notifications">
+            <button className="relative rounded-lg p-2 text-ink-mute hover:bg-paper-low" title="Notifications coming soon">
               <Bell className="h-5 w-5" />
-              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-green-500" />
             </button>
             <div className="flex items-center gap-2">
               <div
