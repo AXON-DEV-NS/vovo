@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if the user is owner/admin or standard user
-    const adminEmail = (process.env.ADMIN_EMAIL || "oren.on.oren.25@gmail.com").trim().toLowerCase();
-    const isOwner = email === adminEmail;
+    const adminEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+    const isOwner = Boolean(adminEmail) && email === adminEmail;
     const role = isOwner ? "ADMIN" : await resolveUserRole(email, "USER");
 
     // Persist or fetch a real user row so userId aligns with database CUID

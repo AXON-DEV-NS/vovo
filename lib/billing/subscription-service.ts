@@ -28,10 +28,10 @@ export interface UserAccessStatus {
  */
 export async function checkUserAccess(userId: string, email: string): Promise<UserAccessStatus> {
   const cleanEmail = (email || "").trim().toLowerCase();
-  const adminEmail = (process.env.ADMIN_EMAIL || "oren.on.oren.25@gmail.com").trim().toLowerCase();
+  const adminEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
 
-  // 1. Owner Admin always has full access
-  if (cleanEmail === adminEmail) {
+  // 1. Owner Admin always has full access (only when an owner is configured)
+  if (adminEmail && cleanEmail === adminEmail) {
     return {
       hasAccess: true,
       status: "ACTIVE",

@@ -120,18 +120,18 @@ function seed(): DemoState {
   ];
 
   const auditLogs: AuditLogItem[] = [
-    { id: "a1", action: "admin.login", actorId: "oren.on.oren.25@gmail.com", actorRole: "admin", targetUserId: null, metadata: { method: "password+2fa" }, ipAddress: "102.44.11.7", timestamp: hoursAgo(1) },
+    { id: "a1", action: "admin.login", actorId: "admin@local", actorRole: "admin", targetUserId: null, metadata: { method: "password+2fa" }, ipAddress: "192.0.2.10", timestamp: hoursAgo(1) },
     { id: "a2", action: "auth.login", actorId: "ahmed@example.com", actorRole: "client", targetUserId: "u1", metadata: { anomaly: false }, ipAddress: "41.233.10.2", timestamp: hoursAgo(3) },
     { id: "a3", action: "auth.magic_link_failed", actorId: "nour@example.com", actorRole: "system", targetUserId: null, metadata: { attemptNumber: 2 }, ipAddress: "197.34.50.1", timestamp: hoursAgo(4) },
     { id: "a4", action: "content.approved", actorId: "u1", actorRole: "client", targetUserId: null, metadata: { contentId: "ci_42" }, ipAddress: null, timestamp: hoursAgo(6) },
-    { id: "a5", action: "admin.user_suspended", actorId: "oren.on.oren.25@gmail.com", actorRole: "admin", targetUserId: "u5", metadata: { reason: "payment overdue" }, ipAddress: "102.44.11.7", timestamp: hoursAgo(9) },
+    { id: "a5", action: "admin.user_suspended", actorId: "admin@local", actorRole: "admin", targetUserId: "u5", metadata: { reason: "payment overdue" }, ipAddress: "192.0.2.10", timestamp: hoursAgo(9) },
     { id: "a6", action: "subscription.changed", actorId: "u3", actorRole: "client", targetUserId: "u3", metadata: { from: "GROWTH", to: "AGENCY" }, ipAddress: null, timestamp: hoursAgo(12) },
     { id: "a7", action: "auth.account_locked", actorId: "khaled@example.com", actorRole: "system", targetUserId: null, metadata: { failedAttempts: 5 }, ipAddress: "91.22.33.4", timestamp: hoursAgo(15) },
     { id: "a8", action: "channel.disconnected", actorId: "u4", actorRole: "client", targetUserId: null, metadata: { channelId: "c5" }, ipAddress: null, timestamp: hoursAgo(20) },
     { id: "a9", action: "content.rejected", actorId: "u1", actorRole: "client", targetUserId: null, metadata: { contentId: "ci_40" }, ipAddress: null, timestamp: hoursAgo(26) },
     { id: "a10", action: "auth.rate_limited", actorId: "203.0.113.9", actorRole: "system", targetUserId: null, metadata: { limit: 10, count: 12 }, ipAddress: "203.0.113.9", timestamp: hoursAgo(30) },
     { id: "a11", action: "ticket.replied", actorId: "u2", actorRole: "client", targetUserId: null, metadata: { ticketId: "tk_8" }, ipAddress: null, timestamp: hoursAgo(36) },
-    { id: "a12", action: "admin.login", actorId: "oren.on.oren.25@gmail.com", actorRole: "admin", targetUserId: null, metadata: { method: "password+2fa" }, ipAddress: "102.44.11.7", timestamp: hoursAgo(48) },
+    { id: "a12", action: "admin.login", actorId: "admin@local", actorRole: "admin", targetUserId: null, metadata: { method: "password+2fa" }, ipAddress: "192.0.2.10", timestamp: hoursAgo(48) },
     { id: "a13", action: "session.revoked", actorId: "u7", actorRole: "client", targetUserId: null, metadata: { sessionId: "s_19" }, ipAddress: null, timestamp: hoursAgo(52) },
     { id: "a14", action: "auth.login", actorId: "laila@example.com", actorRole: "client", targetUserId: "u4", metadata: { anomaly: true, isNewIP: true }, ipAddress: "66.249.80.1", timestamp: hoursAgo(60) },
     { id: "a15", action: "content.status_changed", actorId: "system", actorRole: "system", targetUserId: null, metadata: { from: "GENERATING", to: "READY_FOR_REVIEW" }, ipAddress: null, timestamp: hoursAgo(70) },
@@ -287,7 +287,7 @@ export async function setUserStatus(
   store.auditLogs.unshift({
     id: `a_${Date.now()}`,
     action: status === "SUSPENDED" ? "admin.user_suspended" : "admin.user_reactivated",
-    actorId: "oren.on.oren.25@gmail.com",
+    actorId: process.env.ADMIN_EMAIL || "admin",
     actorRole: "admin",
     targetUserId: id,
     metadata: { email: user.email },
@@ -1359,7 +1359,7 @@ export async function rotateApiCredentials(): Promise<{ key: string; secret: str
   store.auditLogs.unshift({
     id: `a_${Date.now()}`,
     action: "admin.api_key_rotated",
-    actorId: "oren.on.oren.25@gmail.com",
+    actorId: process.env.ADMIN_EMAIL || "admin",
     actorRole: "admin",
     targetUserId: null,
     metadata: { at: new Date().toISOString() },

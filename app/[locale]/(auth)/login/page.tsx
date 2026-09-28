@@ -10,7 +10,7 @@ import { Logo } from "@/components/ui/logo";
 import { useTransitionStore } from "@/lib/transition-store";
 import { AlertCircle, ArrowLeft, CheckCircle, Loader2, Mail } from "lucide-react";
 import { auth, googleProvider } from "@/lib/firebase";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithRedirect, getRedirectResult } from "firebase/auth";
 
 type Mode = "signup" | "signin";
 
@@ -25,7 +25,7 @@ function GoogleGlyph() {
   );
 }
 
-function GoogleSignInButton({ label, returnUrl }: { label: string; returnUrl?: string }) {
+function GoogleSignInButton({ label }: { label: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -39,37 +39,19 @@ function GoogleSignInButton({ label, returnUrl }: { label: string; returnUrl?: s
       return;
     }
     try {
-      const result = await signInWithPopup(fbAuth, googleProvider);
-      const idToken = await result.user.getIdToken();
-
-      const res = await fetch("/api/auth/firebase", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.success) {
-        window.location.href = returnUrl || data.redirect || "/dashboard";
-        return;
-      }
-
-      setError(data.error || "Failed to authenticate with server. Please try again.");
-      setLoading(false);
+      // Redirect-based flow: far more reliable than popups across browsers,
+      // ad-blockers, and mobile. The browser navigates to Google and returns
+      // to this page, where LoginPage completes the sign-in.
+      await signInWithRedirect(fbAuth, googleProvider);
+      // The page is navigating away — keep the spinner visible.
     } catch (err: any) {
       console.error("[Firebase Auth Error Details]:", err);
-      if (err?.code === "auth/popup-closed-by-user" || err?.code === "auth/cancelled-popup-request") {
-        setLoading(false);
-        return;
-      }
-      if (err?.code === "auth/popup-blocked") {
-        setError("Sign-in popup was blocked by your browser. Please allow popups for this site.");
-      } else if (err?.code === "auth/unauthorized-domain") {
+      if (err?.code === "auth/unauthorized-domain") {
         setError("This domain is not authorized in Firebase Console (Authentication > Settings > Authorized domains).");
       } else if (err?.code === "auth/internal-error" || err?.code === "auth/configuration-not-found") {
         setError("Firebase configuration error: Please make sure Google Sign-in is enabled in Firebase Console (Authentication > Sign-in method > Google), with a Project Support Email selected and saved.");
       } else {
-        setError(err?.message || "Google sign-in failed. Please try again.");
+        setError(err?.message || "Google sign-in could not start. Please try again.");
       }
       setLoading(false);
     }
@@ -316,7 +298,7 @@ function SignInForm({ onToggle, returnUrl, onSwitchMode }: FormShellProps) {
       <h1 className="display text-3xl font-semibold text-ink">Welcome back</h1>
       <p className="mb-8 mt-2 text-ink-mute">Continue where you left off.</p>
 
-      <GoogleSignInButton label="Continue with Google" returnUrl={returnUrl} />
+      <GoogleSignInButton label="Continue with Google" />
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
@@ -345,7 +327,7 @@ function SignUpForm({ onToggle, returnUrl, onSwitchMode }: FormShellProps) {
       <h1 className="display text-3xl font-semibold text-ink">Create your account</h1>
       <p className="mb-8 mt-2 text-ink-mute">Put your channel on autopilot.</p>
 
-      <GoogleSignInButton label="Sign up with Google" returnUrl={returnUrl} />
+      <GoogleSignInButton label="Sign up with Google" />
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
@@ -396,6 +378,60 @@ export default function LoginPage() {
     }
   }, []);
 
+  // Complete a Google redirect sign-in: Firebase returns to this page after
+  // the user finishes with Google, and we exchange the result for a session.
+  const [redirectState, setRedirectState] = useState<"idle" | "completing" | "error">("idle");
+  const [redirectError, setRedirectError] = useState("");
+
+  useEffect(() => {
+    const fbAuth = auth;
+    if (!fbAuth) return;
+    let cancelled = false;
+
+    getRedirectResult(fbAuth)
+      .then(async (result) => {
+        if (cancelled || !result?.user) return;
+        setRedirectState("completing");
+        try {
+          const idToken = await result.user.getIdToken();
+          const res = await fetch("/api/auth/firebase", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idToken }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.success) {
+            window.location.href = returnUrl || data.redirect || "/dashboard";
+            return;
+          }
+          if (!cancelled) {
+            setRedirectState("error");
+            setRedirectError(data.error || "Google sign-in failed. Please try again.");
+          }
+        } catch {
+          if (!cancelled) {
+            setRedirectState("error");
+            setRedirectError("Could not complete Google sign-in. Please try again.");
+          }
+        }
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        const code = (err as { code?: string })?.code;
+        if (code === "auth/unauthorized-domain") {
+          setRedirectState("error");
+          setRedirectError(
+            "This domain is not authorized in Firebase Console (Authentication > Settings > Authorized domains)."
+          );
+        }
+        // Any other code simply means there was no pending redirect result.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [returnUrl]);
+
   function toggle() {
     const next: Mode = mode === "signup" ? "signin" : "signup";
     setMode(next);
@@ -441,6 +477,20 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-paper">
+      {/* Completing a Google redirect sign-in */}
+      {redirectState === "completing" && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-paper/95 backdrop-blur-sm">
+          <Loader2 className="h-6 w-6 animate-spin text-green-700" />
+          <p className="text-sm font-medium text-ink-soft">Completing sign-in…</p>
+        </div>
+      )}
+
+      {/* Redirect sign-in error */}
+      {redirectState === "error" && (
+        <div className="fixed left-1/2 top-4 z-[100] w-[min(92vw,28rem)] -translate-x-1/2 rounded-md border border-red-200 bg-red-50 px-4 py-2.5 text-center text-xs text-red-600">
+          {redirectError}
+        </div>
+      )}
 
 
       {/* ============ Desktop: sliding panel ============ */}

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMagicLinkToken, sendMagicLinkEmail } from "@/lib/auth/providers/magic-link";
-
-const rateLimitMap = new Map<string, number>();
+import { checkRateLimit } from "@/lib/security/guardian";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,17 +9,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Please enter a valid email address" }, { status: 400 });
     }
 
-    const now = Date.now();
-    const lastRequest = rateLimitMap.get(email);
-    if (lastRequest && now - lastRequest < 60000) {
-      return NextResponse.json({ error: "Too many attempts. Please wait before trying again." }, { status: 429 });
+    // Shared (Redis-backed in production) rate limiting, per email + per IP.
+    const ip = request.headers.get("x-forwarded-for") ?? "local";
+    const [emailRate, ipRate] = await Promise.all([
+      checkRateLimit(`magic_request_${String(email).trim().toLowerCase()}`, 3, 60000),
+      checkRateLimit(`magic_request_ip_${ip}`, 10, 60000),
+    ]);
+    if (!emailRate.allowed || !ipRate.allowed) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please wait before trying again." },
+        { status: 429 }
+      );
     }
-    rateLimitMap.set(email, now);
 
     const token = await createMagicLinkToken(email);
-    await sendMagicLinkEmail(email, token);
+    const sent = await sendMagicLinkEmail(email, token);
+    if (!sent) {
+      return NextResponse.json(
+        { error: "The sign-in email could not be sent right now. Please try the verification code instead." },
+        { status: 500 }
+      );
+    }
 
-    console.log(`[Auth] Magic link requested for ${email}`);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

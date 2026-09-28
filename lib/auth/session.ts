@@ -78,16 +78,18 @@ export async function getSession(): Promise<SessionPayload | null> {
       role: payload.role as "USER" | "ADMIN",
     };
 
-    // Revocation check: tokens minted with a session id are only valid while
-    // their server-side record exists. Database outages fall back to the JWT.
+    // Revocation + suspension check: tokens minted with a session id are only
+    // valid while their server-side record exists and the account is active.
+    // Database outages fall back to the JWT.
     const sid = typeof payload.sid === "string" ? payload.sid : undefined;
     if (sid && process.env.DATABASE_URL) {
       try {
         const record = await prisma.session.findUnique({
           where: { id: sid },
-          select: { expiresAt: true },
+          select: { expiresAt: true, user: { select: { status: true } } },
         });
         if (!record || record.expiresAt <= new Date()) return null;
+        if (record.user?.status === "SUSPENDED") return null;
 
         // Best-effort last-seen tracking — never blocks the request path.
         void prisma.session
@@ -95,6 +97,23 @@ export async function getSession(): Promise<SessionPayload | null> {
           .catch(() => {});
       } catch {
         // Database unavailable: fall back to verifying the signed token only.
+      }
+    } else if (process.env.DATABASE_URL) {
+      // Legacy stateless tokens (minted before revocable sessions) — still
+      // honor an account suspension.
+      try {
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { id: session.userId },
+              { email: session.email.trim().toLowerCase() },
+            ],
+          },
+          select: { status: true },
+        });
+        if (user?.status === "SUSPENDED") return null;
+      } catch {
+        // Database unavailable: fall back to the signed token.
       }
     }
 

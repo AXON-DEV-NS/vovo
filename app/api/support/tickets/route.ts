@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     priority: resolvedPriority,
   });
 
-  // Notify admin at oren.on.oren.25@gmail.com of the newly opened problem / issue
+  // Notify the admin inbox (ADMIN_EMAIL) of the newly opened problem / issue
   notifySupportTicketCreated({
     ticketId: ticket.id,
     userId: session.userId,

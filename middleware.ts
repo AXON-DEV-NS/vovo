@@ -14,7 +14,8 @@ const intlMiddleware = createMiddleware(routing);
  * - Verifies JWT Role and Owner Email to prevent privilege escalation
  */
 async function isAdminRequest(request: NextRequest): Promise<boolean> {
-  const allowedEmail = (process.env.ADMIN_EMAIL || "oren.on.oren.25@gmail.com").trim().toLowerCase();
+  const allowedEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+  if (!allowedEmail) return false; // fail closed when the owner is not configured
   const tokens = [
     request.cookies.get("admin_session")?.value,
     request.cookies.get("session")?.value,
@@ -96,6 +97,30 @@ function stripLocale(pathname: string): string {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // ── API routes ──────────────────────────────────────────────────────────
+  // CSRF defense-in-depth: mutating requests that carry an Origin header from
+  // a different host are rejected. Browser requests always include Origin;
+  // server-to-server calls (Vercel Cron) have none and pass through.
+  if (pathname.startsWith("/api")) {
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
+      const origin = request.headers.get("origin");
+      if (origin) {
+        try {
+          if (new URL(origin).host !== request.nextUrl.host) {
+            return applySecurityHeaders(
+              NextResponse.json({ error: "Cross-origin request blocked." }, { status: 403 })
+            );
+          }
+        } catch {
+          return applySecurityHeaders(
+            NextResponse.json({ error: "Invalid request origin." }, { status: 403 })
+          );
+        }
+      }
+    }
+    return applySecurityHeaders(NextResponse.next());
+  }
 
   // Apply security headers directly to /api routes without routing/locale overhead
   if (pathname.startsWith("/api")) {

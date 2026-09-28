@@ -2,7 +2,7 @@
  * lib/email/notifier.ts
  * Centralized email and incident notification dispatcher.
  * Dispatches all contact requests, user issues, and support tickets
- * directly to the admin's inbox (oren.on.oren.25@gmail.com).
+ * directly to the admin's inbox (ADMIN_EMAIL).
  */
 
 import { writeAuditLog } from "@/lib/services/audit";
@@ -10,8 +10,7 @@ import { readEnvLocal } from "@/lib/admin/secrets";
 import { getStore, saveContactInquiry } from "@/lib/admin/data";
 import { sendMail } from "@/lib/email/smtp-mailer";
 
-export const NOTIFICATION_EMAIL =
-  (process.env.ADMIN_EMAIL || "oren.on.oren.25@gmail.com").trim().toLowerCase();
+export const NOTIFICATION_EMAIL = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
 
 /**
  * "From" address used by the email provider. For Resend this MUST be a
@@ -67,6 +66,10 @@ export async function sendNotificationEmail(
   options: EmailDispatchOptions
 ): Promise<{ success: boolean; method: string; messageId?: string; error?: string }> {
   const recipient = options.to || NOTIFICATION_EMAIL;
+  if (!recipient) {
+    console.error("[Email] No notification recipient configured (ADMIN_EMAIL is not set).");
+    return { success: false, method: "none", error: "No notification recipient configured" };
+  }
   const message = {
     to: recipient,
     replyTo: options.replyTo,
