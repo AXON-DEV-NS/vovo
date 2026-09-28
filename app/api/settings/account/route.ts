@@ -3,6 +3,8 @@ import { getSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/db/prisma';
 import { writeAuditLog } from '@/lib/services/audit';
 
+const MAX_INSTRUCTIONS = 2000;
+
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -14,7 +16,15 @@ export async function GET() {
         { email: session.email.toLowerCase() },
       ],
     },
-    select: { id: true, email: true, name: true, avatarUrl: true, role: true, createdAt: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      avatarUrl: true,
+      role: true,
+      createdAt: true,
+      customInstructions: true,
+    },
   });
 
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -25,11 +35,22 @@ export async function PATCH(request: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const body = await request.json();
-  const { name } = body;
+  const body = await request.json().catch(() => ({}));
+  const hasName = typeof body.name === 'string' && body.name.trim().length > 0;
+  const hasInstructions = typeof body.customInstructions === 'string';
 
-  if (typeof name !== 'string' || !name.trim()) {
-    return NextResponse.json({ error: 'Name is required.' }, { status: 400 });
+  if (!hasName && !hasInstructions) {
+    return NextResponse.json(
+      { error: 'Provide a name or custom instructions to update.' },
+      { status: 400 }
+    );
+  }
+
+  if (hasInstructions && body.customInstructions.length > MAX_INSTRUCTIONS) {
+    return NextResponse.json(
+      { error: `Instructions are too long (max ${MAX_INSTRUCTIONS} characters).` },
+      { status: 400 }
+    );
   }
 
   const existing = await prisma.user.findFirst({
@@ -46,16 +67,27 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
+  const data: { name?: string; customInstructions?: string } = {};
+  if (hasName) data.name = body.name.trim();
+  if (hasInstructions) data.customInstructions = body.customInstructions.trim();
+
   const updated = await prisma.user.update({
     where: { id: existing.id },
-    data: { name: name.trim() },
-    select: { id: true, email: true, name: true, avatarUrl: true },
+    data,
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      avatarUrl: true,
+      customInstructions: true,
+    },
   });
 
   await writeAuditLog({
-    action: 'content.status_changed', // reuse closest available — Phase 5 adds profile_updated
+    action: 'account.updated',
     actorId: existing.id,
-    metadata: { field: 'name' },
+    targetUserId: existing.id,
+    metadata: { fields: Object.keys(data) },
   });
 
   return NextResponse.json(updated);

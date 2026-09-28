@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DashboardHomeSkeleton } from "@/components/ui/page-skeletons";
+import { WelcomeTour } from "@/components/dashboard/welcome-tour";
 import {
   Users,
   Eye,
@@ -57,6 +58,7 @@ export default function DashboardPage() {
   const [channels, setChannels] = useState<ChannelInfo[]>([]);
   const [content, setContent] = useState<ContentItem[]>([]);
   const [access, setAccess] = useState<AccessStatus | null>(null);
+  const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -65,9 +67,10 @@ export default function DashboardPage() {
         fetch("/api/youtube/status").then((r) => (r.ok ? r.json() : null)),
         fetch("/api/content").then((r) => (r.ok ? r.json() : null)),
         fetch("/api/billing/status").then((r) => (r.ok ? r.json() : null)),
+        fetch("/api/onboarding/state").then((r) => (r.ok ? r.json() : null)),
       ]);
 
-      const [accountRes, channelsRes, contentRes, accessRes] = results;
+      const [accountRes, channelsRes, contentRes, accessRes, onboardingRes] = results;
       if (accountRes.status === "fulfilled" && accountRes.value) setAccount(accountRes.value);
       if (channelsRes.status === "fulfilled" && channelsRes.value?.channels) {
         setChannels(channelsRes.value.channels);
@@ -76,6 +79,14 @@ export default function DashboardPage() {
         setContent(contentRes.value);
       }
       if (accessRes.status === "fulfilled" && accessRes.value) setAccess(accessRes.value);
+      if (
+        onboardingRes.status === "fulfilled" &&
+        onboardingRes.value?.completedAt &&
+        onboardingRes.value?.tourSeen === false
+      ) {
+        // First real dashboard visit after finishing onboarding.
+        setShowTour(true);
+      }
 
       setLoading(false);
     }
@@ -285,6 +296,8 @@ export default function DashboardPage() {
           </Button>
         </Link>
       </div>
+
+      {showTour && <WelcomeTour onDone={() => setShowTour(false)} />}
     </div>
   );
 }

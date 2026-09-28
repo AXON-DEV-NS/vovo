@@ -21,6 +21,15 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
+  /// Free-text style notes and always-include/always-avoid rules for the AI
+  /// (persistent and editable later from account settings).
+  customInstructions String?  @db.Text
+  /// Current onboarding step (1-8). Lets the client resume where they left off.
+  onboardingStep     Int       @default(1)
+  onboardingCompletedAt DateTime?
+  /// When the first-visit dashboard tour was dismissed.
+  tourSeenAt         DateTime?
+
   sessions      Session[]
   channels      Channel[]
   contentItems  ContentItem[]
@@ -77,6 +86,12 @@ model Channel {
   requiresAvatar  Boolean?
   /// Character turnaround sheet images (front/back/sides) for visual consistency
   avatarSheetUrls String[]      @default([])
+  /// Uploaded single avatar image (raw bytes) reused for every video
+  avatarImage     Bytes?
+  avatarImageMime String?
+  /// Reference channel + reference video for the AI to study (validated URLs)
+  referenceChannelUrl String?
+  referenceVideoUrl   String?
   connectedAt     DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

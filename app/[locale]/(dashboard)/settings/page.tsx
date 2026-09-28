@@ -21,6 +21,7 @@ interface Account {
   name: string | null;
   avatarUrl: string | null;
   createdAt: string;
+  customInstructions?: string | null;
 }
 
 interface Channel {
@@ -128,6 +129,8 @@ export default function SettingsPage() {
   const [account, setAccount] = useState<Account | null>(null);
   const [name, setName] = useState("");
   const [savingAccount, setSavingAccount] = useState(false);
+  const [instructions, setInstructions] = useState("");
+  const [savingInstructions, setSavingInstructions] = useState(false);
 
   const [channels, setChannels] = useState<Channel[]>([]);
   const [disconnectTarget, setDisconnectTarget] = useState<Channel | null>(null);
@@ -160,6 +163,7 @@ export default function SettingsPage() {
       if (accountRes.status === "fulfilled" && accountRes.value) {
         setAccount(accountRes.value);
         setName(accountRes.value.name ?? "");
+        setInstructions(accountRes.value.customInstructions ?? "");
       }
       if (channelsRes.status === "fulfilled" && channelsRes.value?.channels) {
         setChannels(channelsRes.value.channels);
@@ -182,6 +186,28 @@ export default function SettingsPage() {
       cancelled = true;
     };
   }, []);
+
+  const handleSaveInstructions = async () => {
+    setSavingInstructions(true);
+    try {
+      const res = await fetch("/api/settings/account", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customInstructions: instructions }),
+      });
+      if (!res.ok) throw new Error("request failed");
+      const updated = (await res.json()) as { customInstructions: string | null };
+      setInstructions(updated.customInstructions ?? "");
+      setAccount((prev) =>
+        prev ? { ...prev, customInstructions: updated.customInstructions ?? "" } : prev
+      );
+      addToast("AI instructions saved.", "success");
+    } catch {
+      addToast("Failed to save instructions. Please try again.", "error");
+    } finally {
+      setSavingInstructions(false);
+    }
+  };
 
   const handleSaveAccount = async () => {
     if (!name.trim()) return;
@@ -337,6 +363,37 @@ export default function SettingsPage() {
                 disabled={savingAccount || !name.trim() || name.trim() === (account?.name ?? "")}
               >
                 {savingAccount ? t("account.saving") : t("account.saveChanges")}
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>AI custom instructions</CardTitle>
+              <CardDescription>
+                Style notes, tone, pacing, and always-include or always-avoid rules. The AI applies
+                these to every script it writes for your channels.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <textarea
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value.slice(0, 2000))}
+                rows={6}
+                placeholder={
+                  "Examples:\n- Always open with a bold question in the first 3 seconds\n- Keep a calm, confident tone — no hype\n- Never use clickbait titles"
+                }
+                className="flex w-full rounded-md border border-line bg-paper-high px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
+              />
+              <p className="mt-1 text-right text-xs text-ink-faint">{instructions.length}/2000</p>
+            </CardContent>
+            <CardFooter>
+              <Button
+                onClick={handleSaveInstructions}
+                disabled={savingInstructions || instructions === (account?.customInstructions ?? "")}
+              >
+                {savingInstructions ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Save instructions
               </Button>
             </CardFooter>
           </Card>
