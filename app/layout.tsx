@@ -4,7 +4,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import { ToastProvider } from "@/components/ui/toast";
 import { TransitionOverlay } from "@/components/ui/transition-overlay";
 import { FirstLoadBranding } from "@/components/ui/first-load-branding";
-import { IntroSequence } from "@/components/marketing/intro-sequence";
+import { WelcomeSplash } from "@/components/marketing/welcome-splash";
 import { ThemeColorSync } from "@/components/ui/theme-color-sync";
 import "./globals.css";
 
@@ -90,7 +90,7 @@ export default async function RootLayout({
       <body className="font-sans antialiased bg-paper text-ink">
         <NextIntlClientProvider messages={messages} locale={locale}>
           <ToastProvider>{children}</ToastProvider>
-          <IntroSequence />
+          <WelcomeSplash />
           <TransitionOverlay />
           <FirstLoadBranding />
           <ThemeColorSync />

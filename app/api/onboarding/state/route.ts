@@ -33,6 +33,7 @@ export async function GET() {
       onboardingStep: true,
       onboardingCompletedAt: true,
       tourSeenAt: true,
+      welcomeSeenAt: true,
       customInstructions: true,
       channels: {
         orderBy: { connectedAt: "asc" },
@@ -65,6 +66,7 @@ export async function GET() {
     step: Math.min(Math.max(user.onboardingStep, 1), MAX_STEP),
     completedAt: user.onboardingCompletedAt ? user.onboardingCompletedAt.toISOString() : null,
     tourSeen: Boolean(user.tourSeenAt),
+    welcomeSeen: Boolean(user.welcomeSeenAt),
     customInstructions: user.customInstructions ?? "",
     hasAccess: access.hasAccess,
     accessMessage: access.message,
@@ -88,6 +90,7 @@ export async function PATCH(request: NextRequest) {
     onboardingStep?: number;
     onboardingCompletedAt?: Date;
     tourSeenAt?: Date;
+    welcomeSeenAt?: Date;
   } = {};
 
   if (typeof body.step === "number" && Number.isFinite(body.step)) {
@@ -98,6 +101,9 @@ export async function PATCH(request: NextRequest) {
   }
   if (body.tourSeen === true) {
     data.tourSeenAt = new Date();
+  }
+  if (body.welcomeSeen === true) {
+    data.welcomeSeenAt = new Date();
   }
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });

@@ -29,6 +29,9 @@ model User {
   onboardingCompletedAt DateTime?
   /// When the first-visit dashboard tour was dismissed.
   tourSeenAt         DateTime?
+  /// When the one-time welcome splash was dismissed (persisted per account,
+  /// consistent across devices — shown exactly once).
+  welcomeSeenAt      DateTime?
 
   sessions      Session[]
   channels      Channel[]
