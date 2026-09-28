@@ -51,7 +51,7 @@ function applySecurityHeaders(res: NextResponse): NextResponse {
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  res.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
   res.headers.set("X-XSS-Protection", "1; mode=block");
 
   // Strict CSP: locks down scripts, styles, and strictly enforces form-action 'self'
