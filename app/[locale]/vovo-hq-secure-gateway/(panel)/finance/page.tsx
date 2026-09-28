@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/loading-skeleton';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 
 interface FinanceData {
@@ -78,7 +79,7 @@ export default function AdminFinancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-extrabold text-emerald-600">
-              {loading ? '...' : finance.mrrFormatted}
+              {loading ? <Skeleton className="h-8 w-24" /> : finance.mrrFormatted}
             </div>
             <p className="text-xs text-ink-mute mt-1">Active subscriptions</p>
           </CardContent>
@@ -92,7 +93,7 @@ export default function AdminFinancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-extrabold text-ink">
-              {loading ? '...' : finance.arrFormatted}
+              {loading ? <Skeleton className="h-8 w-24" /> : finance.arrFormatted}
             </div>
             <p className="text-xs text-ink-mute mt-1">Projected annual revenue</p>
           </CardContent>
@@ -106,7 +107,7 @@ export default function AdminFinancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-extrabold text-ink">
-              {loading ? '...' : finance.activeSubscriptions}
+              {loading ? <Skeleton className="h-8 w-16" /> : finance.activeSubscriptions}
             </div>
             <p className="text-xs text-emerald-600 font-medium mt-1">Across 3 plans</p>
           </CardContent>
@@ -120,7 +121,7 @@ export default function AdminFinancePage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-extrabold text-amber-600">
-              {loading ? '...' : finance.churnRate}
+              {loading ? <Skeleton className="h-8 w-16" /> : finance.churnRate}
             </div>
             <p className="text-xs text-ink-mute mt-1">{finance.churnedSubscriptions} cancellations</p>
           </CardContent>

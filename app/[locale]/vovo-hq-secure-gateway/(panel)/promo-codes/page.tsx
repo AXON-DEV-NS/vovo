@@ -5,6 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ListRowsSkeleton } from '@/components/ui/page-skeletons';
+import { Loader2 } from 'lucide-react';
 
 interface PromoCode {
   id: string;
@@ -29,6 +31,7 @@ export default function AdminPromoCodesPage() {
   const [expiryDate, setExpiryDate] = useState('');
   const [maxUses, setMaxUses] = useState('');
   const [creating, setCreating] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const fetchCodes = () => {
     fetch('/api/admin/promo-codes')
@@ -80,16 +83,26 @@ export default function AdminPromoCodesPage() {
   }
 
   async function toggle(id: string, active: boolean) {
-    await fetch(`/api/admin/promo-codes/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ active }),
-    });
+    setBusyId(id);
+    try {
+      await fetch(`/api/admin/promo-codes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active }),
+      });
+    } finally {
+      setBusyId(null);
+    }
     fetchCodes();
   }
 
   async function remove(id: string) {
-    await fetch(`/api/admin/promo-codes/${id}`, { method: 'DELETE' });
+    setBusyId(id);
+    try {
+      await fetch(`/api/admin/promo-codes/${id}`, { method: 'DELETE' });
+    } finally {
+      setBusyId(null);
+    }
     fetchCodes();
   }
 
@@ -168,7 +181,7 @@ export default function AdminPromoCodesPage() {
                 />
               </div>
               <Button type="submit" variant="primary" className="h-10" disabled={creating}>
-                {creating ? '...' : 'Create'}
+                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create'}
               </Button>
             </div>
           </form>
@@ -179,7 +192,7 @@ export default function AdminPromoCodesPage() {
       <Card className="bg-paper-high border-line shadow-xs">
         <CardContent className="p-0">
           {loading ? (
-            <div className="p-6 text-sm text-ink-mute">Loading...</div>
+            <ListRowsSkeleton rows={3} />
           ) : codes.length === 0 ? (
             <div className="p-6 text-sm text-ink-mute">No promo codes yet.</div>
           ) : (
@@ -203,16 +216,24 @@ export default function AdminPromoCodesPage() {
                     <Button
                       size="sm"
                       variant="secondary"
+                      disabled={busyId === c.id}
                       onClick={() => toggle(c.id, !c.active)}
                     >
-                      {c.active ? 'Disable' : 'Enable'}
+                      {busyId === c.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : c.active ? (
+                        'Disable'
+                      ) : (
+                        'Enable'
+                      )}
                     </Button>
                     <Button
                       size="sm"
                       variant="danger"
+                      disabled={busyId === c.id}
                       onClick={() => remove(c.id)}
                     >
-                      Delete
+                      {busyId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
                     </Button>
                   </div>
                 </div>

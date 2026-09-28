@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton, CardSkeleton } from "@/components/ui/loading-skeleton";
 import { CreditCard, Download, Loader2, Monitor, Trash2 } from "lucide-react";
 
 interface Account {
@@ -258,8 +259,16 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-ink-faint" />
+      <div className="max-w-4xl mx-auto space-y-8 pb-10" aria-hidden="true">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-40 max-w-full" />
+          <Skeleton className="h-4 w-80 max-w-full" />
+        </div>
+        <Skeleton className="h-10 w-96 max-w-full" />
+        <div className="space-y-4">
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
       </div>
     );
   }

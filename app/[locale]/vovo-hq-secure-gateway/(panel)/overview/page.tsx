@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/loading-skeleton';
 import { ADMIN_ROUTES } from '@/lib/constants';
 
 interface HealthItem {
@@ -107,7 +108,7 @@ export default function AdminOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-extrabold text-ink">
-              {loading ? '...' : (kpis?.totalUsers ?? '—')}
+              {loading ? <Skeleton className="h-8 w-20" /> : (kpis?.totalUsers ?? '—')}
             </div>
             <p className="text-xs text-emerald-600 font-medium mt-1">
               ↑ +{kpis?.newUsersThisMonth ?? 0} this month
@@ -124,7 +125,7 @@ export default function AdminOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-extrabold text-ink">
-              {loading ? '...' : (kpis?.activeChannels ?? '—')}
+              {loading ? <Skeleton className="h-8 w-20" /> : (kpis?.activeChannels ?? '—')}
             </div>
             <p className="text-xs text-emerald-600 font-medium mt-1">
               {kpis?.activeSubscriptions ?? '—'} active subscriptions
@@ -141,7 +142,7 @@ export default function AdminOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-extrabold text-ink">
-              {loading ? '...' : (kpis?.mrrFormatted ?? '—')}
+              {loading ? <Skeleton className="h-8 w-28" /> : (kpis?.mrrFormatted ?? '—')}
             </div>
             <p className="text-xs text-ink-mute mt-1">Calculated from active subscriptions</p>
           </CardContent>
@@ -160,7 +161,7 @@ export default function AdminOverviewPage() {
                 (kpis?.securityWarnings ?? 0) > 0 ? 'text-amber-600' : 'text-emerald-600'
               }`}
             >
-              {loading ? '...' : (kpis?.securityWarnings ?? 0)}
+              {loading ? <Skeleton className="h-8 w-16" /> : (kpis?.securityWarnings ?? 0)}
             </div>
             <p className="text-xs text-ink-mute mt-1">Queue backlog: {kpis?.queueBacklog ?? 0}</p>
           </CardContent>
@@ -208,7 +209,15 @@ export default function AdminOverviewPage() {
                 );
               })
             ) : (
-              <div className="text-sm text-ink-mute">Checking status...</div>
+              <>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="p-4 rounded-xl bg-paper border border-line space-y-2">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-full" />
+                  </div>
+                ))}
+              </>
             )}
           </div>
         </CardContent>

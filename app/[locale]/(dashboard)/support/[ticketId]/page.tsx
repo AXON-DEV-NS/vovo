@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, use } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { MessageThreadSkeleton } from "@/components/ui/page-skeletons";
 import { cn } from "@/lib/cn";
 import {
   ArrowLeft,
@@ -193,8 +194,8 @@ export default function TicketThreadPage({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+      <div className="max-w-3xl">
+        <MessageThreadSkeleton />
       </div>
     );
   }

@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { TableSkeletonRows } from '@/components/ui/page-skeletons';
+import { Loader2 } from 'lucide-react';
 
 interface AdminUser {
   id: string;
@@ -167,11 +169,7 @@ export default function AdminUsersPage() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-ink-mute">
-                    Loading users...
-                  </TableCell>
-                </TableRow>
+                <TableSkeletonRows rows={6} columns={6} />
               ) : users.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-ink-mute">
@@ -372,7 +370,7 @@ export default function AdminUsersPage() {
                       }
                     }}
                   >
-                    {warnSending ? '...' : 'Send'}
+                    {warnSending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send'}
                   </Button>
                 </div>
               </div>
@@ -419,7 +417,7 @@ export default function AdminUsersPage() {
                       }
                     }}
                   >
-                    {freeSending ? '...' : 'Grant for free'}
+                    {freeSending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Grant for free'}
                   </Button>
                 </div>
               </div>

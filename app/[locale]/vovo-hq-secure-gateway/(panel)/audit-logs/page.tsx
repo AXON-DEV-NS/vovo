@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { TableSkeletonRows } from '@/components/ui/page-skeletons';
 
 interface AuditLogItem {
   id: string;
@@ -168,11 +169,7 @@ export default function AdminAuditLogsPage() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-ink-mute">
-                    Loading audit logs...
-                  </TableCell>
-                </TableRow>
+                <TableSkeletonRows rows={8} columns={6} />
               ) : logs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-ink-mute">

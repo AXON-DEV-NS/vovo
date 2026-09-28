@@ -3,8 +3,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { ToastProvider } from "@/components/ui/toast";
 import { TransitionOverlay } from "@/components/ui/transition-overlay";
-import { LoadingOverlay } from "@/components/ui/loading-overlay";
-import { GlobalLoadingGuard } from "@/components/ui/global-loading-guard";
+import { FirstLoadBranding } from "@/components/ui/first-load-branding";
 import { IntroSequence } from "@/components/marketing/intro-sequence";
 import { ThemeColorSync } from "@/components/ui/theme-color-sync";
 import "./globals.css";
@@ -93,8 +92,7 @@ export default async function RootLayout({
           <ToastProvider>{children}</ToastProvider>
           <IntroSequence />
           <TransitionOverlay />
-          <LoadingOverlay />
-          <GlobalLoadingGuard />
+          <FirstLoadBranding />
           <ThemeColorSync />
         </NextIntlClientProvider>
       </body>

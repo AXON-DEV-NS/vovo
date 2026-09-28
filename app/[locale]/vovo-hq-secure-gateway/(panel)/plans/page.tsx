@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Loader2 } from 'lucide-react';
 
 interface PlanView {
   id: string;
@@ -211,7 +212,13 @@ export default function AdminPlansPage() {
                 }
               }}
             >
-              {togglingTrial ? '...' : autoTrialEnabled ? 'Disable automatic trial' : 'Enable 14-day free trial'}
+              {togglingTrial ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : autoTrialEnabled ? (
+                'Disable automatic trial'
+              ) : (
+                'Enable 14-day free trial'
+              )}
             </Button>
           </div>
         </CardHeader>
@@ -320,7 +327,13 @@ export default function AdminPlansPage() {
                 }
               }}
             >
-              {siteSending ? '...' : siteTarget === 'user' ? 'Grant free access to person' : 'Enable free access'}
+              {siteSending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : siteTarget === 'user' ? (
+                'Grant free access to person'
+              ) : (
+                'Enable free access'
+              )}
             </Button>
           </div>
         </CardContent>

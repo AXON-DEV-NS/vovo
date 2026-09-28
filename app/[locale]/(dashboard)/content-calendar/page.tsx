@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { CalendarGridSkeleton } from "@/components/ui/page-skeletons";
 import { cn } from "@/lib/cn";
 
 type ContentStatus =
@@ -346,8 +347,8 @@ export default function ContentCalendarPage() {
 
           <div className="grid grid-cols-7 auto-rows-[120px]">
             {loading ? (
-              <div className="col-span-7 flex h-[480px] items-center justify-center">
-                <p className="text-ink-faint">{t("loading")}</p>
+              <div className="col-span-7">
+                <CalendarGridSkeleton />
               </div>
             ) : (
               daysInMonth.map((date, i) => (

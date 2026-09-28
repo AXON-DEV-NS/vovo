@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
-import { useLoadingStore } from "@/lib/loading-store";
 import {
   PIPELINE_STAGES,
   PIPELINE_COUNT,
@@ -12,8 +11,7 @@ import {
 const RING_SIZE = 208; // px
 const ORBIT_R = 78; // px
 const TILT = 26; // deg
-const MS_PER_STAGE = 300;
-export const LOADER_MIN_MS = 600; // Adaptive optical threshold (avoids jarring flash while keeping navigations fast)
+const MS_PER_STAGE = 500;
 
 const easeInOutCubic = (t: number) =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -21,13 +19,15 @@ const easeInOutCubic = (t: number) =>
 /**
  * PipelineLoader — a refined 3D production cycle.
  *
- * Every load walks through ALL stages IN ORDER (none skipped):
- * the active icon glides to the front, lights up, its label is shown, the
- * gold arc fills one segment, then the ring eases to the next stage. The
- * real site logo sits at the core, front icons are crisp and embossed,
- * back icons carry a subtle depth-of-field blur.
+ * Walks every pipeline stage IN ORDER: the active icon glides to the front,
+ * lights up, its label is shown, the gold arc fills one segment, then the
+ * ring eases to the next stage. The real site logo sits at the core, front
+ * icons are crisp and embossed, back icons carry a subtle depth-of-field blur.
+ *
+ * Used by the first-load branding screen only — internal navigation and data
+ * fetches use content skeletons and inline button states instead.
  */
-function PipelineLoader() {
+export function PipelineLoader() {
   const [step, setStep] = useState(0);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const stepRef = useRef(0);
@@ -138,6 +138,7 @@ function PipelineLoader() {
         <div className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
           <span className="absolute inset-0 -m-2 animate-ping rounded-3xl bg-gold-400/20" />
           <span className="absolute inset-0 -m-1.5 rounded-3xl bg-gradient-to-br from-green-500/30 to-gold-400/30 blur-[2px]" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/vovo25.jpg"
             alt="VOVO Agent AI"
@@ -183,66 +184,14 @@ function PipelineLoader() {
       </div>
 
       {/* active stage label */}
-      <div className="flex h-6 items-center justify-center">
+      <div className="flex h-6 items-center justify-center px-6">
         <p
           key={step}
-          className="animate-fade-in text-xs font-semibold uppercase tracking-[0.22em] text-ink-soft"
+          className="animate-fade-in text-center text-xs font-semibold uppercase tracking-[0.22em] text-ink-soft"
         >
           {active.label}
         </p>
       </div>
-    </div>
-  );
-}
-
-/**
- * Branded glassmorphism loading overlay.
- *
- * Timing guarantees:
- * - The overlay NEVER finishes before one full loop (all stages shown in
- *   order) — even if the page arrives early.
- * - If the page is slow, it keeps loading normally (hard ceiling 45s).
- */
-export function LoadingOverlay() {
-  const active = useLoadingStore((s) => s.active);
-  const [show, setShow] = useState(false);
-  const shownAtRef = useRef(0);
-
-  useEffect(() => {
-    if (active) {
-      if (!shownAtRef.current) shownAtRef.current = Date.now();
-      setShow(true);
-      return;
-    }
-    if (!shownAtRef.current) return;
-    const elapsed = Date.now() - shownAtRef.current;
-    const remaining = Math.max(0, LOADER_MIN_MS - elapsed);
-    const t = window.setTimeout(() => {
-      setShow(false);
-      shownAtRef.current = 0;
-    }, remaining);
-    return () => window.clearTimeout(t);
-  }, [active]);
-
-  // Hard ceiling against a genuinely stuck overlay (very slow page).
-  useEffect(() => {
-    if (!show) return;
-    const t = window.setTimeout(() => {
-      setShow(false);
-      shownAtRef.current = 0;
-    }, 45_000);
-    return () => window.clearTimeout(t);
-  }, [show]);
-
-  if (!show) return null;
-
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="fixed inset-0 z-[9998] flex items-center justify-center bg-paper/60 backdrop-blur-md"
-    >
-      <PipelineLoader />
     </div>
   );
 }
