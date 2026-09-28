@@ -4,6 +4,7 @@ import { getContentItems, createContentItem } from '@/lib/services/content';
 import { checkUserAccess } from '@/lib/billing/subscription-service';
 import { prisma } from '@/lib/db/prisma';
 import { checkRateLimit } from '@/lib/security/guardian';
+import { getOrBuildPlan } from '@/lib/scheduling/planner';
 
 type ContentStatus = 'IDEA' | 'SCRIPT' | 'GENERATING' | 'READY_FOR_REVIEW' | 'SCHEDULED' | 'PUBLISHED' | 'REJECTED';
 
@@ -62,7 +63,6 @@ export async function POST(request: NextRequest) {
 
   const channel = await prisma.channel.findFirst({
     where: { id: channelId, userId: session.userId },
-    select: { id: true },
   });
   if (!channel) {
     return NextResponse.json(
@@ -71,11 +71,32 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // When no explicit schedule is given, use the AI publishing plan:
+  // the next free slot chosen from real audience-activity + competition data.
+  let resolvedScheduledAt = scheduledAt ? new Date(scheduledAt) : undefined;
+  if (!resolvedScheduledAt) {
+    try {
+      const plan = await getOrBuildPlan(channel);
+      const existing = await prisma.contentItem.findMany({
+        where: { channelId: channel.id, scheduledAt: { not: null } },
+        select: { scheduledAt: true },
+      });
+      const taken = existing.map((i) => i.scheduledAt!.getTime());
+      const nextSlot = plan.slots.find((slot) => {
+        const t = new Date(slot.dateISO).getTime();
+        return t > Date.now() && !taken.some((u) => Math.abs(u - t) < 2 * 60 * 60 * 1000);
+      });
+      if (nextSlot) resolvedScheduledAt = new Date(nextSlot.dateISO);
+    } catch {
+      // Planning is best-effort — the item can still be scheduled manually.
+    }
+  }
+
   const item = await createContentItem({
     channelId: channel.id,
     userId: session.userId,
     title,
-    scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+    scheduledAt: resolvedScheduledAt,
   });
 
   return NextResponse.json(item, { status: 201 });

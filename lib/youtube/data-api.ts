@@ -425,3 +425,50 @@ export function parseVideoReference(input: string): string | null {
   if (/^[A-Za-z0-9_-]{11}$/.test(value)) return value;
   return null;
 }
+
+
+// ─── Upload distribution (competition signal for scheduling) ─────────────────
+
+export interface UploadDistribution {
+  /** counts[weekday 0-6 (UTC)][hour 0-23 (UTC)] */
+  counts: number[][];
+  total: number;
+  publishedAfter: string;
+}
+
+/**
+ * Real competition signal: when videos matching this query were actually
+ * published over the last 30 days (UTC weekday × hour). Cached for 12 hours.
+ */
+export async function getRecentUploadDistribution(query: string): Promise<UploadDistribution> {
+  const publishedAfter = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const cacheKey = `upload-dist:${query.trim().toLowerCase()}`;
+
+  const data = await cached<{ items?: { snippet?: { publishedAt?: string } }[] }>(
+    cacheKey,
+    12 * 60 * 60 * 1000,
+    () =>
+      ytFetch("search", {
+        part: "snippet",
+        q: query.trim(),
+        type: "video",
+        order: "date",
+        maxResults: 25,
+        publishedAfter,
+      })
+  );
+
+  const counts = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0));
+  let total = 0;
+
+  for (const item of data.items ?? []) {
+    const iso = item.snippet?.publishedAt;
+    if (!iso) continue;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) continue;
+    counts[d.getUTCDay()][d.getUTCHours()] += 1;
+    total += 1;
+  }
+
+  return { counts, total, publishedAfter };
+}

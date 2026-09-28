@@ -3,13 +3,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Calendar, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Filter, Sparkles, Clock } from "lucide-react";
 import { CalendarGridSkeleton } from "@/components/ui/page-skeletons";
+import type { PublishingPlan } from "@/lib/scheduling/planner";
 import { cn } from "@/lib/cn";
 
 type ContentStatus =
@@ -90,6 +91,22 @@ export default function ContentCalendarPage() {
   // Channel & status filters (derived from real content items)
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+
+  // AI publishing plan (real signals only — cached server-side)
+  const [plan, setPlan] = useState<PublishingPlan | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    fetch("/api/scheduling/plan")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (mounted && d?.plan) setPlan(d.plan as PublishingPlan);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -397,6 +414,79 @@ export default function ContentCalendarPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* AI publishing plan — real audience + competition signals */}
+      {plan && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-gold-600" />
+              AI publishing plan — next 14 days
+            </CardTitle>
+            <CardDescription>
+              Slots chosen from real audience activity and lower-competition windows.
+              Read-only — scheduling a video manually always overrides it.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="default">
+                Audience:{" "}
+                {plan.audience === "ar"
+                  ? "Arabic"
+                  : plan.audience === "both"
+                    ? "Both markets"
+                    : "International"}
+              </Badge>
+              <Badge variant={plan.trendsAvailable ? "success" : "warning"}>
+                {plan.trendsAvailable ? "Personalized from your Analytics" : "Awaiting Analytics data"}
+              </Badge>
+              <Badge variant={plan.competitionAvailable ? "success" : "warning"}>
+                {plan.competitionAvailable
+                  ? `Competition: ${plan.sampleSize} recent niche videos analyzed`
+                  : "Competition data unavailable"}
+              </Badge>
+            </div>
+
+            {plan.slots.length === 0 ? (
+              <p className="py-4 text-center text-sm text-ink-mute">
+                Recommended slots will appear here once your channel is connected.
+              </p>
+            ) : (
+              <div className="divide-y divide-line">
+                {plan.slots.map((slot) => (
+                  <div key={slot.dateISO} className="flex items-center gap-4 py-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-low">
+                      <Clock className="h-4 w-4 text-ink-mute" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-ink" suppressHydrationWarning>
+                        {new Date(slot.dateISO).toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })}{" "}
+                        · {String(slot.hourUTC).padStart(2, "0")}:00 UTC
+                      </p>
+                      <p className="truncate text-xs text-ink-mute">{slot.reason}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {plan.notes.length > 0 && (
+              <ul className="space-y-1 border-t border-line pt-3">
+                {plan.notes.map((note, i) => (
+                  <li key={i} className="text-xs text-ink-faint">
+                    - {note}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Item Modal */}
       <Modal
