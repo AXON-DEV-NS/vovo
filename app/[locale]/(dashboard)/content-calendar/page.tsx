@@ -27,9 +27,10 @@ interface ContentItem {
   status: ContentStatus;
   channelId: string;
   channelTitle: string;
+  channelNiche: string | null;
   scheduledAt: string;
   scriptText: string;
-  statusHistory: any[];
+  statusHistory: { fromStatus: string | null; toStatus: string; actor: string; comment: string | null; createdAt: string }[];
 }
 
 const getStatusColor = (status: ContentStatus) => {
@@ -86,7 +87,7 @@ export default function ContentCalendarPage() {
   const [comment, setComment] = useState("");
   const [toastMessage, setToastMessage] = useState("");
   
-  // Channels and status filters mock
+  // Channel & status filters (derived from real content items)
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
@@ -104,7 +105,8 @@ export default function ContentCalendarPage() {
                 title: item.title,
                 status: item.status,
                 channelId: item.channelId,
-                channelTitle: item.channel?.title || "My Channel",
+                channelTitle: item.channel?.title || "Channel",
+                channelNiche: item.channel?.niche ?? null,
                 scheduledAt: item.scheduledAt || item.createdAt,
                 scriptText: item.scriptText || "",
                 statusHistory: item.statusHistory || [],
@@ -145,7 +147,7 @@ export default function ContentCalendarPage() {
     if (!selectedItem) return;
 
     try {
-      // Mocking fetch call
+      // Send the review action to the server
       await fetch(`/api/content/${selectedItem.id}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -155,16 +157,12 @@ export default function ContentCalendarPage() {
       // Write rejected/changed work into the niche's Mistake Log so the
       // agent checks against it before producing future content.
       if (action === "reject" || action === "request_changes") {
-        const channelNiches: Record<string, string> = {
-          "Tech Insights": "technology",
-          "AI Daily": "technology",
-        };
         try {
           await fetch("/api/niche/mistake", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              niche: channelNiches[selectedItem.channelTitle] ?? "general",
+              niche: selectedItem.channelNiche ?? "general",
               channelId: selectedItem.channelId,
               title: `${action === "reject" ? "Rejected" : "Changes requested"}: ${selectedItem.title}`,
               description: `The AI's draft "${selectedItem.title}" for "${selectedItem.channelTitle}" was ${action === "reject" ? "rejected" : "sent back for changes"} during client review.`,

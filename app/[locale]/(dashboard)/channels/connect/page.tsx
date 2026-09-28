@@ -1,182 +1,189 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/loading-skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/cn";
-import { Check, ArrowLeft, ArrowRight, Video as Youtube, Shield, Loader2, CheckCircle } from "lucide-react";
+import { Video as Youtube, Shield, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 
-const steps = [
-  { key: "step1", icon: Youtube },
-  { key: "step2", icon: Shield },
-  { key: "step3", icon: Loader2 },
-];
+const YT_STATUS_MESSAGES: Record<string, { text: string; ok: boolean }> = {
+  connected: { text: "YouTube channel connected successfully.", ok: true },
+  not_configured: { text: "YouTube connection is not configured yet. Please contact support.", ok: false },
+  invalid_state: { text: "The connection request expired or was blocked. Please try again.", ok: false },
+  db_not_configured: { text: "Database is not connected — the channel cannot be saved yet.", ok: false },
+  no_channel: { text: "No YouTube channel was found on that Google account.", ok: false },
+  failed: { text: "YouTube connection failed (expired token or missing permissions). Please try again.", ok: false },
+};
 
-const mockChannels = [
-  { id: "1", title: "My Tech Channel", thumbnail: "", subscribers: "124,500", videoCount: 342 },
-  { id: "2", title: "Gaming Highlights", thumbnail: "", subscribers: "32,100", videoCount: 89 },
-];
+interface ChannelRow {
+  id: string;
+  title: string;
+  thumbnailUrl: string | null;
+  subscriberCount: number;
+  videoCount: number;
+}
 
+/**
+ * Real channel connection page — no simulated steps.
+ * Starting the flow redirects to Google OAuth; the server callback stores the
+ * channel; this page simply reflects the real connection state.
+ */
 export default function ChannelConnectPage() {
   const t = useTranslations("channels.connect");
-  const [currentStep, setCurrentStep] = useState(0);
-  const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
-  const [scanProgress, setScanProgress] = useState(0);
+  const router = useRouter();
+  const params = useSearchParams();
+  const ytStatus = params.get("youtube");
+  const statusMessage = ytStatus ? YT_STATUS_MESSAGES[ytStatus] : null;
 
-  function handleConnect() {
-    setCurrentStep(1);
-  }
+  const [channels, setChannels] = useState<ChannelRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
 
-  function handleApprove() {
-    setCurrentStep(2);
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 15;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-      }
-      setScanProgress(Math.min(progress, 100));
-    }, 500);
+  useEffect(() => {
+    fetch("/api/youtube/status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (Array.isArray(d?.channels)) setChannels(d.channels as ChannelRow[]);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  function startConnect() {
+    setConnecting(true);
+    window.location.href = "/api/youtube/connect";
   }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-ink">{t("title")}</h1>
+        <p className="mt-2 text-sm text-ink-mute">
+          We request only the permissions needed to publish and analyze — revoke access anytime from your
+          Google account.
+        </p>
       </div>
 
-      {/* Step indicators */}
-      <div className="flex items-center gap-2">
-        {steps.map((step, i) => (
-          <div key={step.key} className="flex items-center gap-2">
-            <div className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors",
-              i <= currentStep ? "bg-green-600 text-paper-high" : "bg-paper-low text-ink-faint"
-            )}>
-              {i < currentStep ? <Check className="h-4 w-4" /> : i + 1}
-            </div>
-            {i < steps.length - 1 && (
-              <div className={cn("h-px w-12 sm:w-20", i < currentStep ? "bg-green-600" : "bg-line")} />
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Step 0: Choose channel */}
-      {currentStep === 0 && (
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold text-ink mb-2">{t("step1.title")}</h2>
-            <p className="text-sm text-ink-mute mb-6">{t("step1.desc")}</p>
-            <div className="space-y-3">
-              {mockChannels.map((ch) => (
-                <button
-                  key={ch.id}
-                  onClick={() => setSelectedChannel(ch.id)}
-                  className={cn(
-                    "flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all",
-                    selectedChannel === ch.id ? "border-green-500 bg-green-50 shadow-card" : "border-line hover:border-line-strong"
-                  )}
-                >
-                  <div className="h-12 w-12 rounded-xl bg-paper-low flex items-center justify-center">
-                    <Youtube className="h-6 w-6 text-red-500" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-ink">{ch.title}</p>
-                    <p className="text-sm text-ink-faint">{ch.subscribers} subscribers · {ch.videoCount} videos</p>
-                  </div>
-                  {selectedChannel === ch.id && <CheckCircle className="h-5 w-5 text-green-600" />}
-                </button>
-              ))}
-            </div>
-            <div className="mt-6 flex justify-end">
-              <Button onClick={handleConnect} disabled={!selectedChannel}>
-                {t("connectButton")}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      {statusMessage && (
+        <div
+          className={cn(
+            "flex items-start gap-2.5 rounded-lg border px-4 py-3 text-sm",
+            statusMessage.ok
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-amber-200 bg-amber-50 text-amber-800"
+          )}
+        >
+          {statusMessage.ok ? (
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+          ) : (
+            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          )}
+          <span>{statusMessage.text}</span>
+        </div>
       )}
 
-      {/* Step 1: Review permissions */}
-      {currentStep === 1 && (
+      {loading ? (
         <Card>
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold text-ink mb-2">{t("step2.title")}</h2>
-            <p className="text-sm text-ink-mute mb-6">{t("step2.desc")}</p>
-            <div className="space-y-3 mb-6">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="flex items-start gap-3 rounded-xl bg-paper p-4">
-                  <Shield className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-                  <p className="text-sm text-ink-soft">{t(`step2.scopes.${i}`)}</p>
-                </div>
-              ))}
-            </div>
-            <div className="rounded-xl bg-green-50 border border-green-200 p-4 mb-6">
-              <p className="text-sm text-green-700 font-medium">{t("step2.note")}</p>
-            </div>
-            <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => setCurrentStep(0)}>
-                <ArrowLeft className="h-4 w-4" />
-                {t("back")}
-              </Button>
-              <Button onClick={handleApprove}>
-                {t("continue")}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
+          <CardContent className="space-y-4 p-6" aria-hidden="true">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+            <Skeleton className="h-16 w-full rounded-xl" />
           </CardContent>
         </Card>
-      )}
-
-      {/* Step 2: Scanning */}
-      {currentStep === 2 && (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <div className="mx-auto mb-6">
-              <div className="relative h-24 w-24 mx-auto">
-                <svg className="h-24 w-24 -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="45" fill="none" stroke="#E4E4E7" strokeWidth="8" />
-                  <circle
-                    cx="50" cy="50" r="45" fill="none" stroke="#4F46E5" strokeWidth="8"
-                    strokeDasharray={`${2 * Math.PI * 45}`}
-                    strokeDashoffset={`${2 * Math.PI * 45 * (1 - scanProgress / 100)}`}
-                    strokeLinecap="round"
-                    className="transition-all duration-300"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-lg font-bold text-ink">{Math.round(scanProgress)}%</span>
-                </div>
-              </div>
-            </div>
-            <h2 className="text-lg font-semibold text-ink mb-2">{t("step3.title")}</h2>
-            <p className="text-sm text-ink-mute mb-8">{t("step3.desc")}</p>
-            <div className="max-w-sm mx-auto space-y-3">
-              {["scanning", "analyzing", "optimizing"].map((phase, i) => {
-                const phaseProgress = Math.max(0, Math.min(100, (scanProgress - i * 33) * 3));
-                const isDone = scanProgress >= (i + 1) * 33;
-                return (
-                  <div key={phase} className="flex items-center gap-3">
-                    <div className={cn("flex h-6 w-6 items-center justify-center rounded-full text-xs", isDone ? "bg-green-100 text-green-700" : "bg-paper-low text-ink-faint")}>
-                      {isDone ? <Check className="h-3 w-3" /> : <div className="h-2 w-2 rounded-full bg-line-strong animate-pulse" />}
+      ) : (
+        <>
+          {/* Real connected channels */}
+          {channels.length > 0 && (
+            <Card>
+              <CardContent className="space-y-4 p-6">
+                <h2 className="text-lg font-semibold text-ink">Connected channels</h2>
+                {channels.map((ch) => (
+                  <div
+                    key={ch.id}
+                    className="flex items-center gap-4 rounded-xl border border-line p-4"
+                  >
+                    {ch.thumbnailUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={ch.thumbnailUrl}
+                        alt={ch.title}
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-50">
+                        <Youtube className="h-6 w-6 text-green-700" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-ink">{ch.title}</p>
+                      <p className="text-sm text-ink-faint">
+                        {ch.subscriberCount.toLocaleString("en-US")} subscribers ·{" "}
+                        {ch.videoCount.toLocaleString("en-US")} videos
+                      </p>
                     </div>
-                    <p className={cn("text-sm", isDone ? "text-ink" : "text-ink-faint")}>{t(`step3.${phase}`)}</p>
+                    <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
                   </div>
-                );
-              })}
-            </div>
-            {scanProgress >= 100 && (
-              <div className="mt-8">
-                <Badge variant="success" className="text-sm px-4 py-1">Channel connected successfully!</Badge>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                ))}
+                <div className="flex justify-end">
+                  <Button variant="secondary" onClick={startConnect} disabled={connecting}>
+                    {connecting ? "Redirecting…" : "Connect another channel"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Connect card / empty state */}
+          <Card>
+            <CardContent className="space-y-6 p-6">
+              {channels.length === 0 ? (
+                <EmptyState
+                  icon={<Youtube className="h-8 w-8 text-ink-faint" />}
+                  title="No channel connected yet"
+                  description="Connect your YouTube channel to let the AI agent research, produce, and publish on your behalf."
+                  action={{ label: "Connect with Google", onClick: startConnect }}
+                />
+              ) : (
+                <>
+                  <h2 className="text-lg font-semibold text-ink">Permissions we request</h2>
+                  <div className="space-y-3">
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} className="flex items-start gap-3 rounded-xl bg-paper p-4">
+                        <Shield className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                        <p className="text-sm text-ink-soft">{t(`step2.scopes.${i}`)}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rounded-xl bg-green-50 border border-green-200 p-4">
+                    <p className="text-sm text-green-700 font-medium">{t("step2.note")}</p>
+                  </div>
+                </>
+              )}
+
+              {channels.length === 0 && (
+                <div className="space-y-3">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="flex items-start gap-3 rounded-xl bg-paper p-4">
+                      <Shield className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                      <p className="text-sm text-ink-soft">{t(`step2.scopes.${i}`)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button variant="ghost" onClick={() => router.push("/dashboard")}>
+              Back to dashboard <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );

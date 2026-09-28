@@ -41,7 +41,7 @@ export async function getContentItems(params: {
         : {}),
     },
     include: {
-      channel: { select: { id: true, title: true, thumbnailUrl: true } },
+      channel: { select: { id: true, title: true, thumbnailUrl: true, niche: true } },
       statusHistory: { orderBy: { createdAt: 'asc' } },
     },
     orderBy: { scheduledAt: 'asc' },
@@ -53,7 +53,7 @@ export async function getContentItemById(id: string, userId: string) {
   return prisma.contentItem.findFirst({
     where: { id, userId },
     include: {
-      channel: { select: { id: true, title: true, thumbnailUrl: true } },
+      channel: { select: { id: true, title: true, thumbnailUrl: true, niche: true } },
       statusHistory: { orderBy: { createdAt: 'asc' } },
     },
   });

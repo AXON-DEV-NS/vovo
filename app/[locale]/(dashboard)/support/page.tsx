@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { ListRowsSkeleton } from "@/components/ui/page-skeletons";
 import { cn } from "@/lib/cn";
 import {
   Search,
@@ -27,7 +28,7 @@ import {
 type TicketPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
 type TicketStatus = "OPEN" | "IN_PROGRESS" | "WAITING_ON_CLIENT" | "RESOLVED" | "CLOSED";
 
-interface MockTicket {
+interface TicketRow {
   id: string;
   subject: string;
   priority: TicketPriority;
@@ -107,25 +108,6 @@ const FAQ_DATA: FaqItem[] = [
   },
 ];
 
-const MOCK_TICKETS: MockTicket[] = [
-  {
-    id: "t1",
-    subject: "Video not publishing after approval",
-    priority: "HIGH",
-    status: "IN_PROGRESS",
-    createdAt: "2026-08-28T10:00:00Z",
-    _count: { messages: 3 },
-  },
-  {
-    id: "t2",
-    subject: "How to change my content tone settings?",
-    priority: "NORMAL",
-    status: "RESOLVED",
-    createdAt: "2026-08-20T09:00:00Z",
-    _count: { messages: 5 },
-  },
-];
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<TicketStatus, string> = {
@@ -190,14 +172,31 @@ export default function SupportPage() {
   // FAQ state
   const [faqSearch, setFaqSearch] = useState("");
 
-  // Ticket state
-  const [tickets, setTickets] = useState<MockTicket[]>(MOCK_TICKETS);
+  // Ticket state — real data only
+  const [tickets, setTickets] = useState<TicketRow[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(true);
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketDescription, setTicketDescription] = useState("");
   const [ticketPriority, setTicketPriority] = useState<TicketPriority>("NORMAL");
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    fetch("/api/support/tickets")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d) => {
+        if (mounted && Array.isArray(d)) setTickets(d as TicketRow[]);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (mounted) setTicketsLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Filtered FAQs
   const filteredFaq = useMemo(() => {
@@ -410,7 +409,9 @@ export default function SupportPage() {
           )}
 
           {/* Ticket list */}
-          {tickets.length === 0 ? (
+          {ticketsLoading ? (
+            <ListRowsSkeleton rows={3} />
+          ) : tickets.length === 0 ? (
             <div className="py-12 text-center">
               <Ticket className="h-12 w-12 text-line-strong mx-auto mb-3" />
               <p className="font-medium text-ink-soft">{t("tickets.empty")}</p>
