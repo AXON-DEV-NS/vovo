@@ -12,21 +12,21 @@ interface Testimonial {
 const testimonials: Testimonial[] = [
   {
     quote:
-      "VOVO Agent AI completely transformed how I run my channel. I used to spend 20+ hours a week on content — now I spend two hours reviewing AI drafts.",
-    author: "Sarah Chen",
-    role: "Tech Creator · Beta Tester",
+      "Hand the agent your research, scripting, production, and publishing. You stay in control with a single approval click.",
+    author: "Autonomous pipeline",
+    role: "Eight stages · end to end",
   },
   {
     quote:
-      "The competitor analysis alone is worth the subscription. The AI found a content gap I never would have discovered on my own.",
-    author: "Ahmed Al-Rashid",
-    role: "Business Channel · Early Access",
+      "Every video passes a mandatory compliance review against current YouTube policy before any asset is produced.",
+    author: "Compliance-first",
+    role: "Gates before generation",
   },
   {
     quote:
-      "I was skeptical about AI content, but the output quality rivals what my human team was producing — at a fraction of the cost.",
-    author: "Maria Rodriguez",
-    role: "Lifestyle Creator · Pilot Creator",
+      "Trend and competitor research feeds a shared niche knowledge base — every channel learns from what the platform discovers.",
+    author: "Shared intelligence",
+    role: "Niche memory · compounding",
   },
 ];
 

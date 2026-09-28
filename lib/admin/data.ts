@@ -308,9 +308,11 @@ export interface OverviewData {
   totalContentItems: number;
   mrrFormatted: string;
   newUsersThisMonth: number;
-  apiErrorRate: string;
+  /** Warning/critical security events in the last 30 days (real count). */
+  securityWarnings: number;
   queueBacklog: number;
-  uptime: string;
+  /** True only when the core checks (database, AI engine, guardian) all pass. */
+  allSystemsOk: boolean;
   systemHealth: {
     database: { ok: boolean; label: string };
     aiEngine: { ok: boolean; label: string };
@@ -323,14 +325,16 @@ export interface OverviewData {
 export async function getOverview(): Promise<OverviewData> {
   if (usingDatabase()) {
     const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const [userCount, newUsersMonth, channelCount, contentCount, backlogCount, subs, errors] = await Promise.all([
+    const [userCount, newUsersMonth, channelCount, contentCount, backlogCount, subs, securityWarnings] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { createdAt: { gte: monthAgo } } }),
       prisma.channel.count(),
       prisma.contentItem.count(),
       prisma.contentItem.count({ where: { status: { in: ["SCRIPT", "GENERATING"] } } }),
       prisma.subscription.findMany(),
-      prisma.securityEvent.count({ where: { severity: { in: ["WARNING", "CRITICAL"] } } }),
+      prisma.securityEvent.count({
+        where: { severity: { in: ["WARNING", "CRITICAL"] }, createdAt: { gte: monthAgo } },
+      }),
     ]);
 
     let mrr = 0;
@@ -344,7 +348,7 @@ export async function getOverview(): Promise<OverviewData> {
       (s) => s.status === "ACTIVE" || s.status === "TRIALING"
     ).length;
 
-    const uptimeHours = (process.uptime() / 3600).toFixed(1);
+    const systemHealth = buildSystemHealth();
 
     return {
       totalUsers: userCount,
@@ -352,10 +356,10 @@ export async function getOverview(): Promise<OverviewData> {
       totalContentItems: contentCount,
       mrrFormatted: `$${(mrr / 100).toLocaleString()}`,
       newUsersThisMonth: newUsersMonth,
-      apiErrorRate: `${Math.min(9.9, Math.max(0.01, (errors / Math.max(1, userCount)) * 10)).toFixed(2)}%`,
+      securityWarnings,
       queueBacklog: backlogCount,
-      uptime: `${uptimeHours}h live`,
-      systemHealth: buildSystemHealth(),
+      allSystemsOk: systemHealth.database.ok && systemHealth.aiEngine.ok && systemHealth.guardian.ok,
+      systemHealth,
       activeSubscriptions: activeSubs,
     };
   }
@@ -379,17 +383,18 @@ export async function getOverview(): Promise<OverviewData> {
   const newUsersThisMonth = store.users.filter(
     (u) => new Date(u.createdAt).getTime() >= monthStart
   ).length;
+  const systemHealth = buildSystemHealth();
 
   return {
     totalUsers: store.users.length,
     activeChannels,
-    totalContentItems: 124,
+    totalContentItems: 0,
     mrrFormatted: `$${(mrr / 100).toLocaleString()}`,
     newUsersThisMonth,
-    apiErrorRate: `${Math.min(9.9, Math.max(0.01, warningEvents * 0.7)).toFixed(2)}%`,
+    securityWarnings: warningEvents,
     queueBacklog: 0,
-    uptime: "99.98%",
-    systemHealth: buildSystemHealth(),
+    allSystemsOk: systemHealth.database.ok && systemHealth.aiEngine.ok && systemHealth.guardian.ok,
+    systemHealth,
     activeSubscriptions: activeSubs,
   };
 }

@@ -47,7 +47,7 @@ function TrustedBy() {
   const stats = [
     ["100%", "YouTube compliant"],
     ["24/7", "Autonomous research"],
-    ["4-Stage", "Production pipeline"],
+    ["8-Stage", "Production pipeline"],
     ["Zero", "Prompt engineering"],
   ];
 
@@ -74,7 +74,7 @@ function TrustedBy() {
             Creators hand us the keys. The agent does the rest.
           </h2>
           <p className="mt-5 max-w-md text-sm leading-relaxed text-ink-mute">
-            Feedback and preview results from early creators testing our automated pipeline and compliance gates.
+            A quick look at what the agent handles for you — before you ever approve a video.
           </p>
         </div>
 

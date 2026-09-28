@@ -17,9 +17,9 @@ interface OverviewKPIs {
   totalContentItems: number;
   mrrFormatted: string;
   newUsersThisMonth: number;
-  apiErrorRate: string;
+  securityWarnings: number;
   queueBacklog: number;
-  uptime: string;
+  allSystemsOk: boolean;
   systemHealth: {
     database: HealthItem;
     aiEngine: HealthItem;
@@ -77,8 +77,21 @@ export default function AdminOverviewPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant="default" className="bg-emerald-100 text-emerald-800 border-emerald-200 py-1 px-3">
-            System operational {kpis?.uptime ?? '99.98%'}
+          <Badge
+            variant="default"
+            className={`py-1 px-3 ${
+              kpis
+                ? kpis.allSystemsOk
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                  : 'bg-amber-100 text-amber-800 border-amber-200'
+                : 'bg-paper-low text-ink-mute border-line'
+            }`}
+          >
+            {kpis
+              ? kpis.allSystemsOk
+                ? 'All systems operational'
+                : 'Degraded — see health below'
+              : 'Checking system...'}
           </Badge>
         </div>
       </div>
@@ -137,13 +150,17 @@ export default function AdminOverviewPage() {
         <Card className="bg-paper-high border-line hover:border-line-strong transition-all shadow-xs">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between text-xs font-semibold text-ink-mute uppercase tracking-wider">
-              <span>API error rate</span>
-              <span className="text-lg">⚡</span>
+              <span>Security warnings (30d)</span>
+              <span className="text-lg">🛡️</span>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-extrabold text-emerald-600">
-              {loading ? '...' : (kpis?.apiErrorRate ?? '—')}
+            <div
+              className={`text-3xl font-extrabold ${
+                (kpis?.securityWarnings ?? 0) > 0 ? 'text-amber-600' : 'text-emerald-600'
+              }`}
+            >
+              {loading ? '...' : (kpis?.securityWarnings ?? 0)}
             </div>
             <p className="text-xs text-ink-mute mt-1">Queue backlog: {kpis?.queueBacklog ?? 0}</p>
           </CardContent>
