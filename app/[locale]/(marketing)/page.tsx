@@ -5,11 +5,13 @@ import { FeatureMarquee } from "@/components/marketing/feature-marquee";
 import { GetStartedButton } from "@/components/marketing/get-started-button";
 import { FallingTestimonials } from "@/components/marketing/falling-testimonials";
 import { PipelineCarousel } from "@/components/marketing/pipeline-carousel";
+import { HeroVideo } from "@/components/marketing/hero-video";
 import { ArrowUpRight } from "lucide-react";
 
 function Hero() {
   return (
     <section className="grain-overlay relative overflow-hidden border-b border-line">
+      <HeroVideo />
       <div className="container-wide relative z-10 grid min-h-[calc(100vh-4rem)] items-start gap-8 py-16 lg:grid-cols-2 lg:items-center lg:gap-14 sm:py-20">
         {/* Left — headline & actions */}
         <div className="max-w-xl text-left">
@@ -36,8 +38,10 @@ function Hero() {
           </div>
         </div>
 
-        {/* Right — unified production-steps carousel */}
-        <PipelineCarousel />
+        {/* Right — unified production-steps carousel (yields to the hero film on desktop) */}
+        <div className="hero-carousel-slot transition-opacity duration-700">
+          <PipelineCarousel />
+        </div>
       </div>
     </section>
   );

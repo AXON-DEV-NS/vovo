@@ -13,7 +13,9 @@ const MAX_STEP = 8;
  */
 export async function GET() {
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) {
+    return NextResponse.json({ ok: true, anonymous: true, welcomeSeen: true });
+  }
 
   if (!process.env.DATABASE_URL) {
     return NextResponse.json(

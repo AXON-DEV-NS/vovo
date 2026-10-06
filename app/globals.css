@@ -404,3 +404,11 @@
   opacity: 1;
   transform: translate(0, 0);
 }
+
+@media (min-width: 1024px) {
+  html[data-hero-video="on"] .hero-carousel-slot {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
