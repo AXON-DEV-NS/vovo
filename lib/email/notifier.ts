@@ -59,8 +59,8 @@ export interface EmailDispatchOptions {
 
 /**
  * Dispatches an email via SMTP (primary provider, failing over to the
- * secondary provider on error). Falls back to Resend HTTP only if no SMTP
- * provider is configured but a Resend key is present.
+ * secondary provider on error). Falls back to Resend HTTP whenever SMTP
+ * delivery fails but a Resend key is present.
  */
 export async function sendNotificationEmail(
   options: EmailDispatchOptions
@@ -84,8 +84,8 @@ export async function sendNotificationEmail(
     return { success: true, method: smtp.provider, messageId: smtp.messageId };
   }
 
-  // 2) Fall back to Resend HTTP only if SMTP was not configured at all.
-  if (smtp.provider === "none") {
+  // 2) Fall back to Resend HTTP whenever SMTP failed and a key is available.
+  if (!smtp.success) {
     const apiKey = getEmailApiKey();
     if (apiKey) {
       try {
