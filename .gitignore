@@ -39,3 +39,8 @@ dev-err*.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Remotion video project (source is committed; deps + renders are not)
+/video/node_modules
+/video/out
+
