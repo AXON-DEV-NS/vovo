@@ -4,8 +4,6 @@
 
 @layer base {
   :root {
-    --font-fraunces: 'Fraunces', Georgia, serif;
-    --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
     --paper: #f5efe1;
     --paper-high: #fbf7ed;
     --ink: #1b1915;

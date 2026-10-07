@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Fraunces, Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { ToastProvider } from "@/components/ui/toast";
@@ -7,6 +8,20 @@ import { FirstLoadBranding } from "@/components/ui/first-load-branding";
 import { WelcomeSplash } from "@/components/marketing/welcome-splash";
 import { ThemeColorSync } from "@/components/ui/theme-color-sync";
 import "./globals.css";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  style: ["normal", "italic"],
+  axes: ["opsz"],
+  variable: "--font-fraunces",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -78,15 +93,12 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} dir="ltr" translate="no" className="notranslate">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Inter:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang={locale}
+      dir="ltr"
+      translate="no"
+      className={`notranslate ${fraunces.variable} ${inter.variable}`}
+    >
       <body className="font-sans antialiased bg-paper text-ink">
         <NextIntlClientProvider messages={messages} locale={locale}>
           <ToastProvider>{children}</ToastProvider>
