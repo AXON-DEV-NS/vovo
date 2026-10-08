@@ -5,12 +5,14 @@
   "description": "VOVO Agent AI — hero background video (Remotion). Renders are copied into ../public/video and never touch the Next.js build.",
   "scripts": {
     "studio": "remotion studio src/index.ts",
-    "render:desktop": "remotion render src/index.ts HeroDesktop out/hero-desktop.mp4 --codec=h264 --crf=23",
-    "render:desktop-webm": "remotion render src/index.ts HeroDesktop out/hero-desktop.webm --codec=vp9 --crf=36",
-    "render:mobile": "remotion render src/index.ts HeroMobile out/hero-mobile.mp4 --codec=h264 --crf=27",
-    "render:mobile-webm": "remotion render src/index.ts HeroMobile out/hero-mobile.webm --codec=vp9 --crf=40",
-    "still:desktop": "remotion still src/index.ts HeroDesktop out/hero-desktop-poster.jpeg --frame=0 --image-format=jpeg --jpeg-quality=82",
-    "still:mobile": "remotion still src/index.ts HeroMobile out/hero-mobile-poster.jpeg --frame=0 --image-format=jpeg --jpeg-quality=82"
+    "render:desktop": "remotion render src/index.ts HeroDesktop ../public/video/hero-desktop.mp4 --codec=h264 --crf=23 --color-space=bt709 --timeout=120000",
+    "render:desktop-webm": "remotion render src/index.ts HeroDesktop ../public/video/hero-desktop.webm --codec=vp9 --crf=36 --color-space=bt709 --timeout=120000",
+    "render:mobile": "remotion render src/index.ts HeroMobile ../public/video/hero-mobile.mp4 --codec=h264 --crf=27 --color-space=bt709 --timeout=120000",
+    "render:mobile-webm": "remotion render src/index.ts HeroMobile ../public/video/hero-mobile.webm --codec=vp9 --crf=40 --color-space=bt709 --timeout=120000",
+    "still:desktop": "remotion still src/index.ts HeroDesktop out/hero-desktop-poster.jpeg --frame=0 --image-format=jpeg --jpeg-quality=82 --timeout=120000",
+    "still:mobile": "remotion still src/index.ts HeroMobile out/hero-mobile-poster.jpeg --frame=0 --image-format=jpeg --jpeg-quality=82 --timeout=120000",
+    "stills:desktop": "remotion render src/index.ts HeroDesktop out/sb-desktop --frames=0,60,120,165,225,255,300,330,360,390,410,430,440,450,460,470,479 --image-format=png --timeout=120000",
+    "stills:mobile": "remotion render src/index.ts HeroMobile out/sb-mobile --frames=0,60,165,255,330,360,400,430,450,470,479 --image-format=png --timeout=120000"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.300",

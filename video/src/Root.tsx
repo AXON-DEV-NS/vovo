@@ -1,5 +1,5 @@
 import { Composition } from "remotion";
-import { HeroBackground, type HeroVariant } from "./HeroBackground";
+import { HeroFilm, type HeroVariant } from "./HeroFilm";
 import { DURATION_IN_FRAMES, FPS, LAYOUTS } from "./brand";
 
 export const RemotionRoot: React.FC = () => {
@@ -7,7 +7,7 @@ export const RemotionRoot: React.FC = () => {
     <>
       <Composition
         id="HeroDesktop"
-        component={HeroBackground}
+        component={HeroFilm}
         durationInFrames={DURATION_IN_FRAMES}
         fps={FPS}
         width={LAYOUTS.desktop.width}
@@ -16,7 +16,7 @@ export const RemotionRoot: React.FC = () => {
       />
       <Composition
         id="HeroMobile"
-        component={HeroBackground}
+        component={HeroFilm}
         durationInFrames={DURATION_IN_FRAMES}
         fps={FPS}
         width={LAYOUTS.mobile.width}
